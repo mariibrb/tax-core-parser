@@ -5,8 +5,8 @@ import xml.etree.ElementTree as ET
 import re
 import streamlit as st
 
-# --- 1. CONFIGURAÇÃO DE ESTILO MATRIZ FISCAL (CLONE DO CONVERSOR RELATÓRIO) ---
-def aplicar_estilo_matriz():
+# --- 1. CONFIGURAÇÃO DE ESTILO (SIDEBAR DIAMOND + FILE UPLOADER ROSA) ---
+def aplicar_estilo_premium():
     st.set_page_config(page_title="MATRIZ FISCAL | Diamond", layout="wide", page_icon="💎")
 
     st.markdown("""
@@ -19,14 +19,16 @@ def aplicar_estilo_matriz():
             background: radial-gradient(circle at top right, #FFDEEF 0%, #F8F9FA 100%) !important; 
         }
 
+        /* --- SIDEBAR IGUAL AO CÓDIGO DE EXEMPLO --- */
         [data-testid="stSidebar"] {
             background-color: #FFFFFF !important;
             border-right: 1px solid #FFDEEF !important;
-            min-width: 350px !important;
+            min-width: 400px !important;
+            max-width: 400px !important;
         }
 
-        /* --- BOTÃO PRINCIPAL COM NEON GLOW --- */
-        div.stButton > button {
+        /* BOTÃO DA SIDEBAR (CINZA COM HOVER ROSA) */
+        [data-testid="stSidebar"] div.stButton > button {
             color: #6C757D !important; 
             background-color: #FFFFFF !important; 
             border: 1px solid #DEE2E6 !important;
@@ -38,15 +40,33 @@ def aplicar_estilo_matriz():
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
             width: 100% !important;
         }
-
-        div.stButton > button:hover {
+        [data-testid="stSidebar"] div.stButton > button:hover {
             transform: translateY(-5px) !important;
             box-shadow: 0 10px 20px rgba(255,105,180,0.2) !important;
             border-color: #FF69B4 !important;
             color: #FF69B4 !important;
         }
 
-        /* --- FILE UPLOADER (ESTILO CONVERSOR RELATORIO) --- */
+        /* --- BOTÃO DE PROCESSAR (NEON) --- */
+        .main div.stButton > button {
+            color: #FF69B4 !important; 
+            background-color: #FFFFFF !important; 
+            border: 2px solid #FF69B4 !important;
+            border-radius: 20px !important;
+            font-family: 'Montserrat', sans-serif !important;
+            font-weight: 800 !important;
+            height: 60px !important;
+            text-transform: uppercase;
+            transition: all 0.4s ease-in-out !important;
+            box-shadow: 0 0 10px rgba(255, 105, 180, 0.2) !important;
+            width: 100% !important;
+        }
+        .main div.stButton > button:hover {
+            box-shadow: 0 0 25px rgba(255, 105, 180, 0.6) !important;
+            transform: scale(1.02) !important;
+        }
+
+        /* --- FILE UPLOADER (BOTÃO ROSA + BORDA TRACEJADA) --- */
         [data-testid="stFileUploader"] { 
             border: 2px dashed #FF69B4 !important; 
             border-radius: 20px !important;
@@ -54,25 +74,24 @@ def aplicar_estilo_matriz():
             padding: 30px !important;
         }
 
-        /* BOTÃO 'BROWSE FILES' (ROSA COM CONTORNO BRANCO GROSSO) */
-        [data-testid="stFileUploader"] section button {
+        section[data-testid="stFileUploader"] button {
             background-color: #FF69B4 !important;
             color: white !important;
             border: 3px solid #FFFFFF !important;
-            font-weight: 700 !important;
-            border-radius: 15px !important;
-            box-shadow: 0 0 15px rgba(255, 105, 180, 0.4) !important;
+            border-radius: 12px !important;
             padding: 10px 20px !important;
+            font-weight: 700 !important;
+            box-shadow: 0 4px 10px rgba(255, 105, 180, 0.3) !important;
         }
 
-        /* --- CARDS DE INSTRUÇÃO --- */
+        /* --- CARDS E TÍTULOS --- */
         .instrucoes-card {
             background-color: rgba(255, 255, 255, 0.7);
             border-radius: 15px;
             padding: 20px;
             border-left: 5px solid #FF69B4;
             margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            min-height: 250px;
         }
 
         h1, h2, h3 {
@@ -82,23 +101,16 @@ def aplicar_estilo_matriz():
             text-align: center;
         }
 
-        /* BOTÃO DOWNLOAD */
-        div.stDownloadButton > button {
-            background-color: #FF69B4 !important; 
-            color: white !important; 
-            border: 3px solid #FFFFFF !important;
-            font-weight: 700 !important;
-            border-radius: 15px !important;
-            box-shadow: 0 0 15px rgba(255, 105, 180, 0.4) !important;
-            height: 60px !important;
-            width: 100% !important;
+        .stTextInput>div>div>input {
+            border: 2px solid #FFDEEF !important;
+            border-radius: 10px !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
-aplicar_estilo_matriz()
+aplicar_estilo_premium()
 
-# --- 2. MOTOR DE LEITURA (34 COLUNAS - LÓGICA MANTIDA) ---
+# --- 2. MOTOR DE LEITURA (34 COLUNAS) ---
 def safe_float(v):
     if v is None or pd.isna(v): return 0.0
     txt = str(v).strip().upper()
@@ -161,22 +173,23 @@ col1, col2 = st.columns(2)
 with col1:
     st.markdown('<div class="instrucoes-card"><h3>📖 Manual de Uso</h3><p>1. Digite o CNPJ na lateral.<br>2. Use o botão rosa para anexar arquivos.<br>3. Clique em Processar.</p></div>', unsafe_allow_html=True)
 with col2:
-    st.markdown('<div class="instrucoes-card"><h3>🎯 Resultados</h3><p>✓ 34 colunas fiscais.<br>✓ Reforma Tributária 2026.<br>✓ Planilha completa.</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="instrucoes-card"><h3>🎯 Entregáveis</h3><p>✓ 34 colunas fiscais.<br>✓ Reforma Tributária 2026.<br>✓ Excel estruturado.</p></div>', unsafe_allow_html=True)
 
 with st.sidebar:
-    cnpj_input = st.text_input("CNPJ do Cliente:", placeholder="00.000.000/0001-00")
-    if st.button("🔄 REINICIAR TUDO"):
+    st.markdown("### 🔍 Configuração")
+    cnpj_input = st.text_input("CNPJ DO CLIENTE", placeholder="00.000.000/0001-00")
+    if st.button("🗑️ RESETAR SISTEMA"):
         st.session_state.clear()
         st.rerun()
 
-files = st.file_uploader("Solte seus arquivos aqui!", type=["xml", "zip"], accept_multiple_files=True)
+files = st.file_uploader("Arraste seus arquivos XML ou ZIP aqui", type=["xml", "zip"], accept_multiple_files=True)
 
 if st.button("🚀 PROCESSAR MATRIZ FISCAL"):
     if not files or not cnpj_input:
         st.error("Esqueceu o CNPJ ou os arquivos!")
     else:
         lista_final = []
-        with st.spinner("Minerando dados fiscais..."):
+        with st.spinner("Minerando dados..."):
             for f in files:
                 if f.name.endswith('.zip'):
                     with zipfile.ZipFile(f) as z:
