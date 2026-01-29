@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 import re
 import streamlit as st
 
-# --- 1. CONFIGURAÇÃO DE ESTILO MATRIZ FISCAL (RIHANNA PREMIUM) ---
+# --- 1. CONFIGURAÇÃO DE ESTILO MATRIZ FISCAL (FOCO NO FILE UPLOADER) ---
 def aplicar_estilo_matriz():
     st.set_page_config(page_title="MATRIZ FISCAL | Diamond", layout="wide", page_icon="💎")
 
@@ -48,30 +48,30 @@ def aplicar_estilo_matriz():
             border-color: #FFFFFF !important;
         }
 
-        /* --- ÁREA DE UPLOAD: BOTÃO ROSA COM CONTORNO BRANCO --- */
+        /* --- AJUSTE SOLICITADO NO FILE UPLOADER --- */
         [data-testid="stFileUploader"] { 
             border: 2px dashed #FF69B4 !important; 
             border-radius: 20px !important;
             background: #FFFFFF !important;
-            padding: 25px !important;
-            box-shadow: 0 10px 30px rgba(255, 105, 180, 0.05) !important;
+            padding: 20px !important;
         }
 
+        /* O BOTÃO 'BROWSE FILES' (ANEXAR): ROSA COM CONTORNO BRANCO */
         section[data-testid="stFileUploader"] button {
             background-color: #FF69B4 !important;
             color: white !important;
             border: 2px solid #FFFFFF !important;
             border-radius: 12px !important;
-            padding: 12px 25px !important;
+            padding: 10px 20px !important;
             font-family: 'Montserrat', sans-serif !important;
             font-weight: 700 !important;
-            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4) !important;
+            box-shadow: 0 4px 10px rgba(255, 105, 180, 0.3) !important;
             transition: 0.3s !important;
         }
 
         section[data-testid="stFileUploader"] button:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 8px 20px rgba(255, 105, 180, 0.6) !important;
+            transform: scale(1.05) !important;
+            box-shadow: 0 0 15px rgba(255, 105, 180, 0.5) !important;
         }
 
         /* --- CARDS DE INSTRUÇÃO --- */
