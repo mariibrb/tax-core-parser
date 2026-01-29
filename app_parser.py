@@ -7,6 +7,7 @@ import streamlit as st
 
 # --- FUNÇÕES DE APOIO ---
 def safe_float(v):
+    """Converte valores do XML para float de forma segura."""
     if v is None or pd.isna(v): return 0.0
     txt = str(v).strip().upper()
     if txt in ['NT', '', 'N/A', 'ISENTO', 'NULL', 'ZERO', '-', ' ']: return 0.0
@@ -18,6 +19,7 @@ def safe_float(v):
     except: return 0.0
 
 def buscar_tag_recursiva(tag_alvo, no):
+    """Busca tags ignorando namespaces."""
     if no is None: return ""
     for elemento in no.iter():
         tag_nome = elemento.tag.split('}')[-1]
@@ -51,6 +53,7 @@ def processar_conteudo_xml(content, dados_lista, cnpj_empresa_auditada):
             cst_p = buscar_tag_recursiva('CST', icms_no) or buscar_tag_recursiva('CSOSN', icms_no)
             cst_icms_full = orig + cst_p if cst_p else orig
 
+            # DICIONÁRIO NA ORDEM EXATA SOLICITADA
             linha = {
                 "CHAVE_ACESSO": str(chave).strip(),
                 "NUM_NF": buscar_tag_recursiva('nNF', ide),
@@ -79,7 +82,7 @@ def processar_conteudo_xml(content, dados_lista, cnpj_empresa_auditada):
                 "VLR-PIS": safe_float(buscar_tag_recursiva('vPIS', pis_no)),
                 "CST-COFINS": buscar_tag_recursiva('CST', cof_no),
                 "VLR-COFINS": safe_float(buscar_tag_recursiva('vCOFINS', cof_no)),
-                # --- FIM COM REFORMA TRIBUTÁRIA ---
+                # --- NOVAS TAGS REFORMA TRIBUTÁRIA AO FINAL ---
                 "CLCLASS": buscar_tag_recursiva('CLClass', prod) or buscar_tag_recursiva('CLClass', imp),
                 "CST-IBS": buscar_tag_recursiva('CST', ibs_no),
                 "BC-IBS": safe_float(buscar_tag_recursiva('vBC', ibs_no)),
@@ -92,37 +95,40 @@ def processar_conteudo_xml(content, dados_lista, cnpj_empresa_auditada):
     except: pass
 
 # --- INTERFACE STREAMLIT ---
-st.title("Tax Core Parser - Reforma Tributária")
+st.set_page_config(page_title="Tax Core Parser", layout="wide")
+st.title("📂 Tax Core Parser - Extração XML")
 
-cnpj_auditado = st.text_input("CNPJ da Empresa Auditada (apenas números):")
-uploaded_files = st.file_uploader("Upload de XMLs ou ZIPs", type=["xml", "zip"], accept_multiple_files=True)
+cnpj_auditado = st.text_input("Digite o CNPJ da Empresa Auditada (apenas números):")
+uploaded_files = st.file_uploader("Arraste seus XMLs ou ZIPs aqui", type=["xml", "zip"], accept_multiple_files=True)
 
-if st.button("Processar e Gerar Excel"):
+if st.button("PROCESSAR ARQUIVOS", use_container_width=True, type="primary"):
     if not cnpj_auditado or not uploaded_files:
-        st.warning("Por favor, insira o CNPJ e faça o upload dos arquivos.")
+        st.warning("⚠️ Informe o CNPJ e selecione os arquivos.")
     else:
         dados_finais = []
-        for uploaded_file in uploaded_files:
-            if uploaded_file.name.endswith('.zip'):
-                with zipfile.ZipFile(uploaded_file) as z:
-                    for f_name in z.namelist():
-                        if f_name.lower().endswith('.xml'):
-                            processar_conteudo_xml(z.read(f_name), dados_finais, cnpj_auditado)
-            else:
-                processar_conteudo_xml(uploaded_file.read(), dados_finais, cnpj_auditado)
+        with st.spinner("Lendo XMLs..."):
+            for f in uploaded_files:
+                if f.name.endswith('.zip'):
+                    with zipfile.ZipFile(f) as z:
+                        for n in z.namelist():
+                            if n.lower().endswith('.xml'):
+                                processar_conteudo_xml(z.read(n), dados_finais, cnpj_auditado)
+                else:
+                    processar_conteudo_xml(f.read(), dados_finais, cnpj_auditado)
         
         if dados_finais:
             df = pd.DataFrame(dados_finais)
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df.to_excel(writer, index=False, sheet_name='DADOS_XML')
+                df.to_excel(writer, index=False, sheet_name='DADOS_EXTRAÇÃO')
             
-            st.success(f"Processado com sucesso! {len(df)} itens encontrados.")
+            st.success(f"✅ Sucesso! {len(df)} itens extraídos.")
             st.download_button(
-                label="Baixar Excel Gerado",
+                label="📥 BAIXAR EXCEL COMPLETO",
                 data=output.getvalue(),
-                file_name=f"extracao_{cnpj_auditado}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                file_name=f"extracao_base_{cnpj_auditado}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
             )
         else:
-            st.error("Nenhum dado válido encontrado nos arquivos enviados.")
+            st.error("❌ Nenhum dado válido encontrado.")
