@@ -7,7 +7,7 @@ import streamlit as st
 
 # --- 1. CONFIGURAÇÃO DE ESTILO (CLONE ABSOLUTO DO SIDEBAR DIAMOND TAX) ---
 def aplicar_estilo_premium():
-    st.set_page_config(page_title="MATRIZ FISCAL | Diamond", layout="wide", page_icon="💎")
+    st.set_page_config(page_title="MATRIZ FISCAL | TAG's", layout="wide", page_icon="💎")
 
     st.markdown("""
         <style>
