@@ -5,8 +5,8 @@ import xml.etree.ElementTree as ET
 import re
 import streamlit as st
 
-# --- 1. CONFIGURAÇÃO DE ESTILO MATRIZ FISCAL (FOCO NO BOTÃO DE ANEXO) ---
-def aplicar_estilo_matriz():
+# --- 1. CONFIGURAÇÃO DE ESTILO (EXTRAÍDO DO GARIMPEIRO/DIAMOND TAX) ---
+def aplicar_estilo_premium():
     st.set_page_config(page_title="MATRIZ FISCAL | Diamond", layout="wide", page_icon="💎")
 
     st.markdown("""
@@ -25,7 +25,7 @@ def aplicar_estilo_matriz():
             min-width: 350px !important;
         }
 
-        /* --- BOTÃO PRINCIPAL COM NEON GLOW --- */
+        /* --- BOTÃO PRINCIPAL (NEON GLOW) --- */
         div.stButton > button {
             color: #FF69B4 !important; 
             background-color: #FFFFFF !important; 
@@ -39,16 +39,13 @@ def aplicar_estilo_matriz():
             width: 100% !important;
             box-shadow: 0 0 10px rgba(255, 105, 180, 0.2) !important;
         }
-
         div.stButton > button:hover {
             background-color: #FF69B4 !important;
             color: #FFFFFF !important;
-            box-shadow: 0 0 25px rgba(255, 105, 180, 0.7), 0 0 45px rgba(255, 105, 180, 0.4) !important;
-            transform: scale(1.02) !important;
-            border-color: #FFFFFF !important;
+            box-shadow: 0 0 25px rgba(255, 105, 180, 0.7) !important;
         }
 
-        /* --- ÁREA DE UPLOAD TRACEJADA --- */
+        /* --- O FILE UPLOADER DO GARIMPEIRO (ATUALIZADO) --- */
         [data-testid="stFileUploader"] { 
             border: 2px dashed #FF69B4 !important; 
             border-radius: 20px !important;
@@ -56,7 +53,7 @@ def aplicar_estilo_matriz():
             padding: 20px !important;
         }
 
-        /* --- O AJUSTE SOLICITADO: BOTÃO ROSA COM CONTORNO BRANCO --- */
+        /* BOTÃO 'BROWSE FILES' (ROSA COM CONTORNO BRANCO) */
         section[data-testid="stFileUploader"] button {
             background-color: #FF69B4 !important;
             color: white !important;
@@ -68,13 +65,12 @@ def aplicar_estilo_matriz():
             box-shadow: 0 4px 10px rgba(255, 105, 180, 0.3) !important;
             transition: 0.3s !important;
         }
-
         section[data-testid="stFileUploader"] button:hover {
             transform: scale(1.05) !important;
             box-shadow: 0 0 15px rgba(255, 105, 180, 0.5) !important;
         }
 
-        /* --- CARDS DE INSTRUÇÃO --- */
+        /* CARDS DE INSTRUÇÃO */
         .instrucoes-card {
             background-color: rgba(255, 255, 255, 0.8);
             border-radius: 25px;
@@ -96,7 +92,7 @@ def aplicar_estilo_matriz():
             border-radius: 12px !important;
         }
 
-        /* --- BOTÃO DOWNLOAD --- */
+        /* BOTÃO DOWNLOAD */
         div.stDownloadButton > button {
             background-color: #FF69B4 !important; 
             color: white !important; 
@@ -105,14 +101,13 @@ def aplicar_estilo_matriz():
             height: 60px !important;
             width: 100% !important;
             border: none !important;
-            box-shadow: 0 10px 20px rgba(255, 105, 180, 0.3) !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
-aplicar_estilo_matriz()
+aplicar_estilo_premium()
 
-# --- 2. MOTOR DE LEITURA (34 COLUNAS) ---
+# --- 2. MOTOR DE LEITURA (LÓGICA DAS 34 COLUNAS PRESERVADA) ---
 def safe_float(v):
     if v is None or pd.isna(v): return 0.0
     txt = str(v).strip().upper()
@@ -173,28 +168,13 @@ st.markdown("<h1 style='text-align: center; font-size: 3rem;'>💎 MATRIZ FISCAL
 
 col1, col2 = st.columns(2)
 with col1:
-    st.markdown("""
-    <div class="instrucoes-card">
-        <h3>📖 Manual de Operação</h3>
-        <p>1. <b>Parâmetros:</b> Digite o CNPJ na barra lateral.</p>
-        <p>2. <b>Upload:</b> Arraste arquivos XML ou ZIP para o campo rosa.</p>
-        <p>3. <b>Consolidação:</b> Clique em 'Processar Matriz Fiscal'.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="instrucoes-card"><h3>📖 Manual de Uso</h3><p>1. Digite o CNPJ na lateral.<br>2. Use o botão rosa para anexar arquivos.<br>3. Clique em Processar.</p></div>', unsafe_allow_html=True)
 with col2:
-    st.markdown("""
-    <div class="instrucoes-card">
-        <h3>🎯 Resultados Esperados</h3>
-        <p>✓ <b>Mapeamento:</b> Extração de 34 colunas fiscais.</p>
-        <p>✓ <b>Reforma:</b> Tags de IBS, CBS e CLClass integradas.</p>
-        <p>✓ <b>Excel:</b> Arquivo diamante pronto para auditoria.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="instrucoes-card"><h3>🎯 Entregáveis</h3><p>✓ 34 colunas fiscais.<br>✓ Reforma Tributária 2026.<br>✓ Planilha estruturada.</p></div>', unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown("### ⚙️ Configurações")
+    st.markdown("### ⚙️ Ajustes")
     cnpj_input = st.text_input("CNPJ do Cliente:", placeholder="00.000.000/0001-00")
-    st.markdown("---")
     if st.button("🔄 REINICIAR SISTEMA"):
         st.session_state.clear()
         st.rerun()
@@ -203,7 +183,7 @@ files = st.file_uploader("Solte seus arquivos aqui!", type=["xml", "zip"], accep
 
 if st.button("🚀 PROCESSAR MATRIZ FISCAL"):
     if not files or not cnpj_input:
-        st.error("⚠️ Parâmetros insuficientes! Informe o CNPJ e os arquivos.")
+        st.error("Esqueceu o CNPJ ou os arquivos!")
     else:
         lista_final = []
         with st.spinner("💎 Rihanna Style: Brilhando nos dados..."):
@@ -219,5 +199,5 @@ if st.button("🚀 PROCESSAR MATRIZ FISCAL"):
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 df.to_excel(writer, index=False)
-            st.success(f"✨ Matriz concluída! {len(df)} registros processados.")
+            st.success(f"✨ Pronto! {len(df)} registros processados.")
             st.download_button("📥 BAIXAR MATRIZ DIAMANTE", output.getvalue(), f"matriz_{cnpj_input}.xlsx")
