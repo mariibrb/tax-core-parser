@@ -5,6 +5,93 @@ import xml.etree.ElementTree as ET
 import re
 import streamlit as st
 
+# --- 1. CONFIGURAÇÃO DE LAYOUT PREMIUM (RIHANNA STYLE) ---
+def configurar_layout_premium(titulo="CORE FISCAL PARSER", icone="💎"):
+    st.set_page_config(page_title=titulo, layout="wide", page_icon=icone)
+
+    st.markdown("""
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;800&family=Plus+Jakarta+Sans:wght@400;700&display=swap');
+
+        header, [data-testid="stHeader"] { display: none !important; }
+        
+        .stApp { 
+            background: radial-gradient(circle at top right, #FFDEEF 0%, #F8F9FA 100%) !important; 
+        }
+
+        [data-testid="stSidebar"] {
+            background-color: #FFFFFF !important;
+            border-right: 1px solid #FFDEEF !important;
+            min-width: 400px !important;
+            max-width: 400px !important;
+        }
+
+        div.stButton > button {
+            color: #6C757D !important; 
+            background-color: #FFFFFF !important; 
+            border: 1px solid #DEE2E6 !important;
+            border-radius: 15px !important;
+            font-family: 'Montserrat', sans-serif !important;
+            font-weight: 800 !important;
+            height: 60px !important;
+            text-transform: uppercase;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+            width: 100% !important;
+        }
+
+        div.stButton > button:hover {
+            transform: translateY(-5px) !important;
+            box-shadow: 0 10px 20px rgba(255,105,180,0.2) !important;
+            border-color: #FF69B4 !important;
+            color: #FF69B4 !important;
+        }
+
+        [data-testid="stFileUploader"] { 
+            border: 2px dashed #FF69B4 !important; 
+            border-radius: 20px !important;
+            background: #FFFFFF !important;
+            padding: 20px !important;
+        }
+
+        div.stDownloadButton > button {
+            background-color: #FF69B4 !important; 
+            color: white !important; 
+            border: 2px solid #FFFFFF !important;
+            font-weight: 700 !important;
+            border-radius: 15px !important;
+            box-shadow: 0 0 15px rgba(255, 105, 180, 0.3) !important;
+            text-transform: uppercase;
+            width: 100% !important;
+            height: 60px !important;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            color: #FF69B4 !important;
+            text-align: center;
+        }
+
+        .stTextInput>div>div>input {
+            border: 2px solid #FFDEEF !important;
+            border-radius: 10px !important;
+            padding: 10px !important;
+        }
+
+        .instrucoes-card {
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 5px solid #FF69B4;
+            margin-bottom: 20px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+# Chamada do Layout
+configurar_layout_premium()
+
+# --- 2. FUNÇÕES DE APOIO E MOTOR DE LEITURA ---
 def safe_float(v):
     if v is None or pd.isna(v): return 0.0
     txt = str(v).strip().upper()
@@ -69,23 +156,38 @@ def ler_xml(content, dados_lista, cnpj_cliente):
             })
     except: pass
 
-st.title("📂 Extrator Fiscal")
-cnpj = st.text_input("CNPJ da Empresa Auditada:")
-files = st.file_uploader("Upload de ZIPs ou XMLs", type=["xml", "zip"], accept_multiple_files=True)
+# --- 3. INTERFACE DE USUÁRIO ---
+st.markdown('<div class="instrucoes-card"><h3>CORE FISCAL PARSER</h3><p style="text-align:center">Extração inteligente de Tags XML para Auditoria e Reforma Tributária</p></div>', unsafe_allow_html=True)
 
-if st.button("GERAR EXCEL") and files and cnpj:
-    lista = []
-    for f in files:
-        if f.name.endswith('.zip'):
-            with zipfile.ZipFile(f) as z:
-                for n in z.namelist():
-                    if n.lower().endswith('.xml'): ler_xml(z.read(n), lista, cnpj)
+with st.sidebar:
+    st.markdown("### CONFIGURAÇÃO")
+    cnpj = st.text_input("CNPJ da Empresa Auditada:", placeholder="Apenas números")
+    st.markdown("---")
+    st.info("O sistema identifica automaticamente Entradas e Saídas com base no CNPJ informado.")
+
+files = st.file_uploader("Upload de arquivos XML ou pastas ZIP", type=["xml", "zip"], accept_multiple_files=True)
+
+if st.button("🚀 PROCESSAR E GERAR EXCEL"):
+    if not files or not cnpj:
+        st.error("Por favor, preencha o CNPJ e suba os arquivos.")
+    else:
+        lista = []
+        with st.spinner("Extraindo dados..."):
+            for f in files:
+                if f.name.endswith('.zip'):
+                    with zipfile.ZipFile(f) as z:
+                        for n in z.namelist():
+                            if n.lower().endswith('.xml'): ler_xml(z.read(n), lista, cnpj)
+                else:
+                    ler_xml(f.read(), lista, cnpj)
+        
+        if lista:
+            df = pd.DataFrame(lista)
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                df.to_excel(writer, index=False)
+            
+            st.success(f"Sucesso! {len(df)} itens processados.")
+            st.download_button("📥 BAIXAR PLANILHA EXCEL", output.getvalue(), "extracao_fiscal.xlsx")
         else:
-            ler_xml(f.read(), lista, cnpj)
-    if lista:
-        df = pd.DataFrame(lista)
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df.to_excel(writer, index=False)
-        st.download_button("📥 BAIXAR PLANILHA", output.getvalue(), "extracao.xlsx", use_container_width=True)
-    
+            st.error("Nenhum dado encontrado nos arquivos.")
