@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 import re
 import streamlit as st
 
-# --- 1. APARÊNCIA PREMIUM (SIDEBAR E CORES TRAVADAS) ---
+# --- 1. APARÊNCIA PREMIUM (SIDEBAR, TÍTULOS EM NEGRITO E CORES TRAVADAS) ---
 def aplicar_estilo_premium():
     st.set_page_config(page_title="MATRIZ FISCAL | Diamond", layout="wide", page_icon="💎")
 
@@ -67,9 +67,10 @@ def aplicar_estilo_premium():
             width: 100% !important;
         }
 
+        /* TÍTULOS EM NEGRITO (IGUAL AO DIAMOND TAX) */
         h1, h2, h3 {
             font-family: 'Montserrat', sans-serif;
-            font-weight: 800;
+            font-weight: 800 !important; /* Forçando o negrito máximo */
             color: #FF69B4 !important;
             text-align: center;
         }
