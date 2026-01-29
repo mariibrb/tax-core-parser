@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 import re
 import streamlit as st
 
-# --- 1. ESTILO RIHANNA (FOFO + NEON + PREMIUM) ---
+# --- 1. ESTILO RIHANNA (FOFO + NEON GLOW TRAVADO) ---
 def aplicar_estilo_rihanna():
     st.set_page_config(page_title="MATRIZ FISCAL", layout="wide", page_icon="💎")
 
@@ -25,45 +25,51 @@ def aplicar_estilo_rihanna():
             min-width: 350px !important;
         }
 
-        /* BOTÃO COM EFEITO NEON ROSA */
-        div.stButton > button {
-            color: #6C757D !important; 
+        /* --- BOTÃO PRINCIPAL E BOTÃO DO UPLOADER COM NEON --- */
+        div.stButton > button, 
+        section[data-testid="stFileUploader"] button {
+            color: #FF69B4 !important; 
             background-color: #FFFFFF !important; 
-            border: 1px solid #DEE2E6 !important;
+            border: 2px solid #FF69B4 !important;
             border-radius: 20px !important;
             font-family: 'Montserrat', sans-serif !important;
             font-weight: 800 !important;
-            height: 60px !important;
+            height: 50px !important;
             text-transform: uppercase;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+            transition: all 0.4s ease-in-out !important;
             width: 100% !important;
+            box-shadow: 0 0 10px rgba(255, 105, 180, 0.2) !important;
         }
 
-        div.stButton > button:hover {
-            transform: translateY(-5px) !important;
-            box-shadow: 0 10px 20px rgba(255,105,180,0.3) !important;
-            border-color: #FF69B4 !important;
-            color: #FF69B4 !important;
+        div.stButton > button:hover, 
+        section[data-testid="stFileUploader"] button:hover {
+            background-color: #FF69B4 !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 0 20px rgba(255, 105, 180, 0.6), 0 0 40px rgba(255, 105, 180, 0.4) !important;
+            transform: scale(1.02) !important;
+            border-color: #FFFFFF !important;
         }
 
-        /* ÁREA DE UPLOAD ROSA NEON (IGUAL AO EXEMPLO) */
+        /* ÁREA DE UPLOAD ROSA NEON */
         [data-testid="stFileUploader"] { 
             border: 2px dashed #FF69B4 !important; 
             border-radius: 20px !important;
             background: #FFFFFF !important;
             padding: 20px !important;
+            box-shadow: inset 0 0 15px rgba(255, 105, 180, 0.05) !important;
         }
 
         /* BOTÃO DOWNLOAD ROSA SÓLIDO */
         div.stDownloadButton > button {
             background-color: #FF69B4 !important; 
             color: white !important; 
-            font-weight: 700 !important;
+            font-weight: 800 !important;
             border-radius: 15px !important;
             text-transform: uppercase;
             width: 100% !important;
             height: 60px !important;
             border: none !important;
+            box-shadow: 0 0 15px rgba(255, 105, 180, 0.5) !important;
         }
 
         h1, h2, h3 {
@@ -82,17 +88,12 @@ def aplicar_estilo_rihanna():
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
             min-height: 250px;
         }
-
-        .stTextInput>div>div>input {
-            border: 2px solid #FFDEEF !important;
-            border-radius: 10px !important;
-        }
         </style>
     """, unsafe_allow_html=True)
 
 aplicar_estilo_rihanna()
 
-# --- 2. MOTOR DE LEITURA (PROCESSAMENTO DAS 34 COLUNAS) ---
+# --- 2. MOTOR DE LEITURA (34 COLUNAS) ---
 def safe_float(v):
     if v is None or pd.isna(v): return 0.0
     txt = str(v).strip().upper()
@@ -119,8 +120,7 @@ def ler_xml(content, dados_lista, cnpj_cliente):
 
         ide, emit, dest = root.find('.//ide'), root.find('.//emit'), root.find('.//dest')
         cnpj_emit = re.sub(r'\D', '', buscar_tag('CNPJ', emit))
-        cnpj_alvo = re.sub(r'\D', '', str(cnpj_cliente))
-        tipo_op = "SAIDA" if (cnpj_emit == cnpj_alvo and buscar_tag('tpNF', ide) == '1') else "ENTRADA"
+        tipo_op = "SAIDA" if (cnpj_emit == re.sub(r'\D', '', str(cnpj_cliente)) and buscar_tag('tpNF', ide) == '1') else "ENTRADA"
 
         for det in root.findall('.//det'):
             prod, imp = det.find('prod'), det.find('imposto')
@@ -158,31 +158,29 @@ def ler_xml(content, dados_lista, cnpj_cliente):
 # --- 3. INTERFACE ---
 st.markdown("<h1>💎 MATRIZ FISCAL</h1>", unsafe_allow_html=True)
 
-# MANUAL E ENTREGÁVEIS (COLUNAS FOFAS)
 col1, col2 = st.columns(2)
 with col1:
     st.markdown("""
     <div class="instrucoes-card">
         <h3>📖 Manual de Uso</h3>
-        <p>1. <b>Configuração:</b> Digite o CNPJ da empresa na barra lateral.</p>
-        <p>2. <b>Upload:</b> Arraste seus arquivos XML ou ZIP para a área tracejada.</p>
-        <p>3. <b>Extração:</b> Clique em "Processar Matriz" para brilhar nos dados.</p>
+        <p>1. <b>Configuração:</b> Digite o CNPJ na barra lateral.</p>
+        <p>2. <b>Upload:</b> Arraste seus arquivos para o campo rosa.</p>
+        <p>3. <b>Extração:</b> Clique em "Processar" para brilhar.</p>
     </div>
     """, unsafe_allow_html=True)
 with col2:
     st.markdown("""
     <div class="instrucoes-card">
         <h3>🎯 Dados Obtidos</h3>
-        <p>✓ <b>Mapeamento Total:</b> 34 colunas fiscais extraídas.</p>
-        <p>✓ <b>Reforma 2026:</b> Tags de IBS, CBS e CLClass incluídas.</p>
-        <p>✓ <b>Inteligência:</b> Separação automática entre Entradas e Saídas.</p>
+        <p>✓ <b>Mapeamento:</b> 34 colunas fiscais completas.</p>
+        <p>✓ <b>Reforma:</b> Tags de IBS, CBS e CLClass incluídas.</p>
+        <p>✓ <b>Audit:</b> Separação nativa de Entradas e Saídas.</p>
     </div>
     """, unsafe_allow_html=True)
 
 with st.sidebar:
     st.markdown("### ⚙️ Ajustes")
     cnpj_input = st.text_input("CNPJ do Cliente:", placeholder="00.000.000/0001-00")
-    st.markdown("---")
     if st.button("🔄 REINICIAR TUDO"):
         st.session_state.clear()
         st.rerun()
@@ -194,7 +192,7 @@ if st.button("🚀 PROCESSAR MATRIZ FISCAL"):
         st.error("Ops! Esqueceu o CNPJ ou os arquivos.")
     else:
         lista_final = []
-        with st.spinner("💎 Rihanna Style: Lapidando seus dados..."):
+        with st.spinner("💎 Rihanna Style: Brilhando nos dados..."):
             for f in files:
                 if f.name.endswith('.zip'):
                     with zipfile.ZipFile(f) as z:
@@ -207,7 +205,5 @@ if st.button("🚀 PROCESSAR MATRIZ FISCAL"):
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 df.to_excel(writer, index=False)
-            st.success(f"✨ Sucesso! {len(df)} itens organizados com perfeição.")
+            st.success(f"✨ Sucesso! {len(df)} itens organizados.")
             st.download_button("📥 BAIXAR MATRIZ DIAMANTE", output.getvalue(), f"matriz_{cnpj_input}.xlsx")
-        else:
-            st.error("Nenhum dado válido encontrado. Verifique se os arquivos são NF-es.")
