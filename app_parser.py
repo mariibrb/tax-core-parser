@@ -5,9 +5,9 @@ import xml.etree.ElementTree as ET
 import re
 import streamlit as st
 
-# --- 1. CONFIGURAÇÃO DE ESTILO (CLONE ABSOLUTO DO SIDEBAR DIAMOND TAX) ---
+# --- 1. APARÊNCIA PREMIUM (SIDEBAR E CORES TRAVADAS) ---
 def aplicar_estilo_premium():
-    st.set_page_config(page_title="MATRIZ FISCAL | TAG's", layout="wide", page_icon="💎")
+    st.set_page_config(page_title="MATRIZ FISCAL | Diamond", layout="wide", page_icon="💎")
 
     st.markdown("""
         <style>
@@ -19,7 +19,7 @@ def aplicar_estilo_premium():
             background: radial-gradient(circle at top right, #FFDEEF 0%, #F8F9FA 100%) !important; 
         }
 
-        /* SIDEBAR IDENTICO AO DIAMOND TAX */
+        /* SIDEBAR IGUAL AO DIAMOND TAX */
         [data-testid="stSidebar"] {
             background-color: #FFFFFF !important;
             border-right: 1px solid #FFDEEF !important;
@@ -27,8 +27,9 @@ def aplicar_estilo_premium():
             max-width: 400px !important;
         }
 
-        /* Mecanismo de fontes e botões da Sidebar */
-        [data-testid="stSidebar"] div.stButton > button {
+        [data-testid="stSidebar"] div.stButton > button { width: 100% !important; }
+
+        div.stButton > button {
             color: #6C757D !important; 
             background-color: #FFFFFF !important; 
             border: 1px solid #DEE2E6 !important;
@@ -36,30 +37,15 @@ def aplicar_estilo_premium():
             font-family: 'Montserrat', sans-serif !important;
             font-weight: 800 !important;
             height: 60px !important;
-            width: 100% !important;
             text-transform: uppercase;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
         }
 
-        [data-testid="stSidebar"] div.stButton > button:hover {
+        div.stButton > button:hover {
             transform: translateY(-5px) !important;
             box-shadow: 0 10px 20px rgba(255,105,180,0.2) !important;
             border-color: #FF69B4 !important;
             color: #FF69B4 !important;
-        }
-
-        /* Estilo dos Inputs e Labels na Sidebar */
-        [data-testid="stSidebar"] label {
-            font-family: 'Montserrat', sans-serif !important;
-            font-weight: 800 !important;
-            color: #FF69B4 !important;
-            font-size: 1.2rem !important;
-        }
-
-        .stTextInput>div>div>input {
-            border: 2px solid #FFDEEF !important;
-            border-radius: 10px !important;
-            padding: 10px !important;
         }
 
         /* FILE UPLOADER COM BOTÃO ROSA E CONTORNO BRANCO */
@@ -78,16 +64,7 @@ def aplicar_estilo_premium():
             border-radius: 15px !important;
             box-shadow: 0 0 15px rgba(255, 105, 180, 0.3) !important;
             text-transform: uppercase;
-        }
-
-        /* CARDS DE INSTRUÇÃO (FIXOS NO TOPO) */
-        .instrucoes-card {
-            background-color: rgba(255, 255, 255, 0.7);
-            border-radius: 15px;
-            padding: 20px;
-            border-left: 5px solid #FF69B4;
-            margin-bottom: 20px;
-            min-height: 280px;
+            width: 100% !important;
         }
 
         h1, h2, h3 {
@@ -95,6 +72,21 @@ def aplicar_estilo_premium():
             font-weight: 800;
             color: #FF69B4 !important;
             text-align: center;
+        }
+
+        .stTextInput>div>div>input {
+            border: 2px solid #FFDEEF !important;
+            border-radius: 10px !important;
+            padding: 10px !important;
+        }
+
+        .instrucoes-card {
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 5px solid #FF69B4;
+            margin-bottom: 20px;
+            min-height: 280px;
         }
 
         div.stDownloadButton > button {
@@ -112,7 +104,7 @@ def aplicar_estilo_premium():
 
 aplicar_estilo_premium()
 
-# --- 2. MOTOR DE LEITURA ---
+# --- 2. SEU MOTOR ORIGINAL (34 COLUNAS - ÍNTEGRO) ---
 def safe_float(v):
     if v is None or pd.isna(v): return 0.0
     txt = str(v).strip().upper()
@@ -138,19 +130,20 @@ def ler_xml(content, dados_lista, cnpj_cliente):
         if inf is None: return 
         ide, emit, dest = root.find('.//ide'), root.find('.//emit'), root.find('.//dest')
         cnpj_emit = re.sub(r'\D', '', buscar_tag('CNPJ', emit))
-        cnpj_alvo = re.sub(r'\D', '', str(cnpj_cliente))
-        tipo_op = "SAIDA" if (cnpj_emit == cnpj_alvo and buscar_tag('tpNF', ide) == '1') else "ENTRADA"
+        tipo_op = "SAIDA" if (cnpj_emit == re.sub(r'\D', '', str(cnpj_cliente)) and buscar_tag('tpNF', ide) == '1') else "ENTRADA"
 
         for det in root.findall('.//det'):
             prod, imp = det.find('prod'), det.find('imposto')
             icms, ipi, pis, cof = det.find('.//ICMS'), det.find('.//IPI'), det.find('.//PIS'), det.find('.//COFINS')
             ibs, cbs = det.find('.//IBS'), det.find('.//CBS')
             
-            orig = buscar_tag('orig', icms); cst_p = buscar_tag('CST', icms) or buscar_tag('CSOSN', icms)
+            orig = buscar_tag('orig', icms)
+            cst_p = buscar_tag('CST', icms) or buscar_tag('CSOSN', icms)
             
             dados_lista.append({
                 "CHAVE_ACESSO": inf.attrib.get('Id', '')[3:],
-                "NUM_NF": buscar_tag('nNF', ide), "DATA_EMISSAO": buscar_tag('dhEmi', ide) or buscar_tag('dEmi', ide),
+                "NUM_NF": buscar_tag('nNF', ide),
+                "DATA_EMISSAO": buscar_tag('dhEmi', ide) or buscar_tag('dEmi', ide),
                 "TIPO_SISTEMA": tipo_op, "CNPJ_EMIT": cnpj_emit, "UF_EMIT": buscar_tag('UF', emit),
                 "CNPJ_DEST": re.sub(r'\D', '', buscar_tag('CNPJ', dest)), "UF_DEST": buscar_tag('UF', dest),
                 "INDIEDEST": buscar_tag('indIEDest', dest), "CFOP": buscar_tag('CFOP', prod), "NCM": buscar_tag('NCM', prod),
@@ -168,38 +161,19 @@ def ler_xml(content, dados_lista, cnpj_cliente):
     except: pass
 
 # --- 3. INTERFACE ---
-st.markdown("<h1>💎 DIAMOND TAX</h1>", unsafe_allow_html=True)
+st.markdown("<h1>💎 MATRIZ FISCAL</h1>", unsafe_allow_html=True)
 
-# SEÇÃO DE MANUAL E ENTREGÁVEIS (FIXA NO TOPO)
+# CARDS FIXOS NO TOPO
 with st.container():
     m_col1, m_col2 = st.columns(2)
     with m_col1:
-        st.markdown("""
-        <div class="instrucoes-card">
-            <h3>📖 Passo a Passo</h3>
-            <ol>
-                <li><b>Relatório SIEG:</b> Suba o arquivo de Status para filtrar canceladas.</li>
-                <li><b>Arquivos XML:</b> Arraste seus arquivos para a área de upload.</li>
-                <li><b>Processamento:</b> Clique no botão "INICIAR APURAÇÃO DIAMANTE".</li>
-                <li><b>Download:</b> Baixe o Excel final estruturado.</li>
-            </ol>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="instrucoes-card"><h3>📖 Manual de Uso</h3><ol><li><b>Configuração:</b> Informe o CNPJ na lateral para liberar o painel.</li><li><b>Upload:</b> Arraste arquivos XML ou ZIP para o campo rosa.</li><li><b>Processamento:</b> Extração automática das 34 colunas.</li></ol></div>', unsafe_allow_html=True)
     with m_col2:
-        st.markdown("""
-        <div class="instrucoes-card">
-            <h3>📊 O que será obtido?</h3>
-            <ul>
-                <li><b>Cálculo DIFAL/ST/FCP:</b> Apuração separada por UF.</li>
-                <li><b>Reforma Tributária:</b> Tags de IBS e CBS incluídas.</li>
-                <li><b>Relatório Premium:</b> Excel estruturado com 34 colunas.</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="instrucoes-card"><h3>🎯 Dados Obtidos</h3><ul><li><b>Mapeamento Total:</b> 34 colunas fiscais extraídas.</li><li><b>Reforma 2026:</b> Tags de IBS, CBS e CLClass incluídas.</li><li><b>Inteligência:</b> Separação automática entre Entradas e Saídas.</li></ul></div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
-# INICIALIZAÇÃO DO ESTADO DE LIBERAÇÃO
+# MECANISMO DE LIBERAÇÃO (SESSION STATE)
 if 'confirmado' not in st.session_state: st.session_state['confirmado'] = False
 
 with st.sidebar:
@@ -219,18 +193,18 @@ with st.sidebar:
         st.session_state.clear()
         st.rerun()
 
-# ÁREA PRINCIPAL SÓ APARECE SE CONFIRMADO
+# CONTEÚDO PRINCIPAL (SÓ APARECE APÓS LIBERAR)
 if st.session_state['confirmado']:
-    st.info(f"🏢 Operação Liberada: {cnpj_limpo}")
-    uploaded_files = st.file_uploader("Arraste seus XMLs ou ZIP aqui:", accept_multiple_files=True)
+    st.info(f"🏢 Empresa Liberada: {cnpj_limpo}")
+    files = st.file_uploader("Arraste seus arquivos XML ou ZIP aqui", type=["xml", "zip"], accept_multiple_files=True)
 
-    if st.button("🚀 INICIAR APURAÇÃO DIAMANTE"):
-        if not uploaded_files:
-            st.error("Anexe os arquivos para processar.")
+    if st.button("🚀 PROCESSAR MATRIZ FISCAL"):
+        if not files:
+            st.error("Esqueceu os arquivos!")
         else:
             lista_final = []
-            with st.spinner("Minerando dados..."):
-                for f in uploaded_files:
+            with st.spinner("💎 Rihanna Style: Brilhando nos dados..."):
+                for f in files:
                     if f.name.endswith('.zip'):
                         with zipfile.ZipFile(f) as z:
                             for n in z.namelist():
@@ -242,7 +216,7 @@ if st.session_state['confirmado']:
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                     df.to_excel(writer, index=False)
-                st.success(f"✨ Matriz concluída com {len(df)} registros!")
-                st.download_button("📥 BAIXAR RELATÓRIO DIAMANTE", output.getvalue(), f"matriz_{cnpj_limpo}.xlsx")
+                st.success(f"✨ Sucesso! {len(df)} itens organizados.")
+                st.download_button("📥 BAIXAR MATRIZ DIAMANTE", output.getvalue(), f"matriz_{cnpj_limpo}.xlsx")
 else:
-    st.warning("👈 Insira o CNPJ na barra lateral e clique em 'LIBERAR OPERAÇÃO' para começar.")
+    st.warning("👈 Insira o CNPJ na barra lateral e clique em 'Liberar Operação' para começar.")
