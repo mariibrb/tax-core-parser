@@ -22,8 +22,7 @@ def configurar_layout_premium(titulo="CORE FISCAL PARSER", icone="💎"):
         [data-testid="stSidebar"] {
             background-color: #FFFFFF !important;
             border-right: 1px solid #FFDEEF !important;
-            min-width: 400px !important;
-            max-width: 400px !important;
+            min-width: 350px !important;
         }
 
         div.stButton > button {
@@ -35,13 +34,13 @@ def configurar_layout_premium(titulo="CORE FISCAL PARSER", icone="💎"):
             font-weight: 800 !important;
             height: 60px !important;
             text-transform: uppercase;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+            transition: all 0.4s ease !important;
             width: 100% !important;
         }
 
         div.stButton > button:hover {
-            transform: translateY(-5px) !important;
-            box-shadow: 0 10px 20px rgba(255,105,180,0.2) !important;
+            transform: translateY(-3px) !important;
+            box-shadow: 0 10px 20px rgba(255,105,180,0.1) !important;
             border-color: #FF69B4 !important;
             color: #FF69B4 !important;
         }
@@ -56,10 +55,8 @@ def configurar_layout_premium(titulo="CORE FISCAL PARSER", icone="💎"):
         div.stDownloadButton > button {
             background-color: #FF69B4 !important; 
             color: white !important; 
-            border: 2px solid #FFFFFF !important;
             font-weight: 700 !important;
             border-radius: 15px !important;
-            box-shadow: 0 0 15px rgba(255, 105, 180, 0.3) !important;
             text-transform: uppercase;
             width: 100% !important;
             height: 60px !important;
@@ -69,29 +66,37 @@ def configurar_layout_premium(titulo="CORE FISCAL PARSER", icone="💎"):
             font-family: 'Montserrat', sans-serif;
             font-weight: 800;
             color: #FF69B4 !important;
-            text-align: center;
-        }
-
-        .stTextInput>div>div>input {
-            border: 2px solid #FFDEEF !important;
-            border-radius: 10px !important;
-            padding: 10px !important;
         }
 
         .instrucoes-card {
-            background-color: rgba(255, 255, 255, 0.7);
-            border-radius: 15px;
-            padding: 20px;
-            border-left: 5px solid #FF69B4;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            border-left: 8px solid #FF69B4;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .beneficios-grid {
+            display: flex;
+            gap: 20px;
             margin-bottom: 20px;
+        }
+
+        .item-beneficio {
+            flex: 1;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #FFDEEF;
         }
         </style>
     """, unsafe_allow_html=True)
 
-# Chamada do Layout
 configurar_layout_premium()
 
-# --- 2. FUNÇÕES DE APOIO E MOTOR DE LEITURA ---
+# --- 2. MOTOR DE PROCESSAMENTO (MANTIDO ÍNTEGRO) ---
 def safe_float(v):
     if v is None or pd.isna(v): return 0.0
     txt = str(v).strip().upper()
@@ -156,23 +161,45 @@ def ler_xml(content, dados_lista, cnpj_cliente):
             })
     except: pass
 
-# --- 3. INTERFACE DE USUÁRIO ---
-st.markdown('<div class="instrucoes-card"><h3>CORE FISCAL PARSER</h3><p style="text-align:center">Extração inteligente de Tags XML para Auditoria e Reforma Tributária</p></div>', unsafe_allow_html=True)
+# --- 3. INTERFACE PRINCIPAL ---
+
+st.markdown('<h1 style="text-align: center;">💎 CORE FISCAL PARSER</h1>', unsafe_allow_html=True)
+
+# CARD DE INSTRUÇÕES
+st.markdown("""
+<div class="instrucoes-card">
+    <h3>📖 MANUAL DE OPERAÇÃO</h3>
+    <p>1. Informe o <b>CNPJ da Empresa Auditada</b> na barra lateral esquerda.</p>
+    <p>2. Arraste suas pastas <b>ZIP</b> (com XMLs dentro) ou arquivos <b>XML</b> avulsos para o campo de upload.</p>
+    <p>3. Clique em <b>🚀 PROCESSAR</b> e aguarde a extração inteligente.</p>
+    <p>4. O sistema organizará automaticamente o que é <b>ENTRADA</b> e o que é <b>SAÍDA</b>.</p>
+</div>
+""", unsafe_allow_html=True)
+
+# O QUE SERÁ CONSEGUIDO
+st.markdown("### 🎯 ENTREGÁVEIS DA EXTRAÇÃO")
+st.markdown("""
+<div class="beneficios-grid">
+    <div class="item-beneficio"><b>📂 Unificação</b><br>Transforma milhares de XMLs em uma única linha por item.</div>
+    <div class="item-beneficio"><b>⚖️ Reforma</b><br>Extração nativa de IBS, CBS e CLClass para 2026.</div>
+    <div class="item-beneficio"><b>🔍 Auditoria</b><br>Base pronta para cruzamento de ICMS, PIS/COFINS e IPI.</div>
+</div>
+""", unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown("### CONFIGURAÇÃO")
-    cnpj = st.text_input("CNPJ da Empresa Auditada:", placeholder="Apenas números")
+    st.markdown("### ⚙️ CONFIGURAÇÃO")
+    cnpj = st.text_input("CNPJ Auditado (só números):", placeholder="Ex: 00123456000188")
     st.markdown("---")
-    st.info("O sistema identifica automaticamente Entradas e Saídas com base no CNPJ informado.")
+    st.write("📌 **Nota:** A identificação de Entrada/Saída depende da exatidão deste CNPJ.")
 
-files = st.file_uploader("Upload de arquivos XML ou pastas ZIP", type=["xml", "zip"], accept_multiple_files=True)
+files = st.file_uploader("Upload de Arquivos", type=["xml", "zip"], accept_multiple_files=True)
 
-if st.button("🚀 PROCESSAR E GERAR EXCEL"):
+if st.button("🚀 PROCESSAR E GERAR PLANILHA"):
     if not files or not cnpj:
-        st.error("Por favor, preencha o CNPJ e suba os arquivos.")
+        st.error("❌ Erro: Preencha o CNPJ e anexe os arquivos.")
     else:
         lista = []
-        with st.spinner("Extraindo dados..."):
+        with st.spinner("💎 Rihanna Style: Processando com elegância..."):
             for f in files:
                 if f.name.endswith('.zip'):
                     with zipfile.ZipFile(f) as z:
@@ -187,7 +214,7 @@ if st.button("🚀 PROCESSAR E GERAR EXCEL"):
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 df.to_excel(writer, index=False)
             
-            st.success(f"Sucesso! {len(df)} itens processados.")
-            st.download_button("📥 BAIXAR PLANILHA EXCEL", output.getvalue(), "extracao_fiscal.xlsx")
+            st.success(f"✨ Concluído! {len(df)} itens extraídos com perfeição.")
+            st.download_button("📥 BAIXAR PLANILHA DE AUDITORIA", output.getvalue(), f"extracao_{cnpj}.xlsx")
         else:
-            st.error("Nenhum dado encontrado nos arquivos.")
+            st.error("⚠️ Nenhum dado válido encontrado. Verifique se os XMLs estão no formato NF-e.")
