@@ -5,9 +5,9 @@ import xml.etree.ElementTree as ET
 import re
 import streamlit as st
 
-# --- 1. CONFIGURAÇÃO DE ESTILO (PADRÃO RIHANNA COM NEON) ---
-def aplicar_estilo_rihanna(titulo="MATRIZ FISCAL", icone="📊"):
-    st.set_page_config(page_title=titulo, layout="wide", page_icon=icone)
+# --- 1. ESTILO RIHANNA (FOFO + NEON + PREMIUM) ---
+def aplicar_estilo_rihanna():
+    st.set_page_config(page_title="MATRIZ FISCAL", layout="wide", page_icon="💎")
 
     st.markdown("""
         <style>
@@ -16,80 +16,83 @@ def aplicar_estilo_rihanna(titulo="MATRIZ FISCAL", icone="📊"):
         header, [data-testid="stHeader"] { display: none !important; }
         
         .stApp { 
-            background: radial-gradient(circle at top right, #FDF2F7 0%, #F8F9FA 100%) !important; 
+            background: radial-gradient(circle at top right, #FFDEEF 0%, #F8F9FA 100%) !important; 
         }
 
         [data-testid="stSidebar"] {
             background-color: #FFFFFF !important;
-            border-right: 2px solid #FFDEEF !important;
+            border-right: 1px solid #FFDEEF !important;
+            min-width: 350px !important;
         }
 
+        /* BOTÃO COM EFEITO NEON ROSA */
         div.stButton > button {
-            color: #FF69B4 !important; 
+            color: #6C757D !important; 
             background-color: #FFFFFF !important; 
-            border: 2px solid #FF69B4 !important;
-            border-radius: 15px !important;
+            border: 1px solid #DEE2E6 !important;
+            border-radius: 20px !important;
             font-family: 'Montserrat', sans-serif !important;
             font-weight: 800 !important;
             height: 60px !important;
             text-transform: uppercase;
-            transition: all 0.4s ease-in-out !important;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
             width: 100% !important;
-            box-shadow: 0 0 5px rgba(255, 105, 180, 0.2) !important;
         }
 
         div.stButton > button:hover {
-            background-color: #FF69B4 !important;
-            color: #FFFFFF !important;
-            box-shadow: 0 0 20px rgba(255, 105, 180, 0.6), 0 0 40px rgba(255, 105, 180, 0.4) !important;
-            transform: scale(1.02) !important;
+            transform: translateY(-5px) !important;
+            box-shadow: 0 10px 20px rgba(255,105,180,0.3) !important;
+            border-color: #FF69B4 !important;
+            color: #FF69B4 !important;
         }
 
+        /* ÁREA DE UPLOAD ROSA NEON (IGUAL AO EXEMPLO) */
         [data-testid="stFileUploader"] { 
             border: 2px dashed #FF69B4 !important; 
             border-radius: 20px !important;
             background: #FFFFFF !important;
             padding: 20px !important;
-            box-shadow: inset 0 0 10px rgba(255, 105, 180, 0.1) !important;
         }
 
+        /* BOTÃO DOWNLOAD ROSA SÓLIDO */
         div.stDownloadButton > button {
             background-color: #FF69B4 !important; 
             color: white !important; 
-            font-weight: 800 !important;
+            font-weight: 700 !important;
             border-radius: 15px !important;
             text-transform: uppercase;
             width: 100% !important;
             height: 60px !important;
             border: none !important;
-            box-shadow: 0 0 15px rgba(255, 105, 180, 0.5) !important;
         }
 
         h1, h2, h3 {
             font-family: 'Montserrat', sans-serif;
             font-weight: 800;
-            color: #343A40 !important;
+            color: #FF69B4 !important;
+            text-align: center;
         }
 
-        .card-rihanna {
-            background-color: white;
+        .instrucoes-card {
+            background-color: rgba(255, 255, 255, 0.8);
             border-radius: 20px;
             padding: 25px;
             border-left: 8px solid #FF69B4;
+            margin-bottom: 25px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
+            min-height: 250px;
+        }
+
+        .stTextInput>div>div>input {
+            border: 2px solid #FFDEEF !important;
+            border-radius: 10px !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
 aplicar_estilo_rihanna()
 
-# --- LÓGICA DE REINICIALIZAÇÃO ---
-def reiniciar_sistema():
-    st.session_state.clear()
-    st.rerun()
-
-# --- 2. LÓGICA DE EXTRAÇÃO (MAPEAMENTO TOTAL DE TAGS) ---
+# --- 2. MOTOR DE LEITURA (PROCESSAMENTO DAS 34 COLUNAS) ---
 def safe_float(v):
     if v is None or pd.isna(v): return 0.0
     txt = str(v).strip().upper()
@@ -101,35 +104,32 @@ def safe_float(v):
         return round(float(txt), 4)
     except: return 0.0
 
-def buscar_tag(tag_alvo, no):
+def buscar_tag(tag, no):
     if no is None: return ""
-    for elemento in no.iter():
-        tag_nome = elemento.tag.split('}')[-1]
-        if tag_nome == tag_alvo: return elemento.text if elemento.text else ""
+    for el in no.iter():
+        if el.tag.split('}')[-1] == tag: return el.text if el.text else ""
     return ""
 
 def ler_xml(content, dados_lista, cnpj_cliente):
     try:
-        xml_str = content.decode('utf-8', errors='replace')
-        xml_str = re.sub(r'\sxmlns(:\w+)?="[^"]+"', '', xml_str) 
+        xml_str = re.sub(r'\sxmlns(:\w+)?="[^"]+"', '', content.decode('utf-8', errors='replace'))
         root = ET.fromstring(xml_str)
         inf = root.find('.//infNFe')
         if inf is None: return 
 
-        ide = root.find('.//ide'); emit = root.find('.//emit'); dest = root.find('.//dest')
+        ide, emit, dest = root.find('.//ide'), root.find('.//emit'), root.find('.//dest')
         cnpj_emit = re.sub(r'\D', '', buscar_tag('CNPJ', emit))
         cnpj_alvo = re.sub(r'\D', '', str(cnpj_cliente))
         tipo_op = "SAIDA" if (cnpj_emit == cnpj_alvo and buscar_tag('tpNF', ide) == '1') else "ENTRADA"
 
         for det in root.findall('.//det'):
-            prod = det.find('prod'); imp = det.find('imposto')
-            icms = det.find('.//ICMS'); ipi = det.find('.//IPI'); pis = det.find('.//PIS'); cof = det.find('.//COFINS')
-            ibs = det.find('.//IBS'); cbs = det.find('.//CBS') 
+            prod, imp = det.find('prod'), det.find('imposto')
+            icms, ipi, pis, cof = det.find('.//ICMS'), det.find('.//IPI'), det.find('.//PIS'), det.find('.//COFINS')
+            ibs, cbs = det.find('.//IBS'), det.find('.//CBS')
             
             orig = buscar_tag('orig', icms)
             cst_p = buscar_tag('CST', icms) or buscar_tag('CSOSN', icms)
             
-            # DICIONÁRIO COMPLETO COM TODAS AS TAGS SOLICITADAS
             dados_lista.append({
                 "CHAVE_ACESSO": inf.attrib.get('Id', '')[3:],
                 "NUM_NF": buscar_tag('nNF', ide),
@@ -140,80 +140,74 @@ def ler_xml(content, dados_lista, cnpj_cliente):
                 "CNPJ_DEST": re.sub(r'\D', '', buscar_tag('CNPJ', dest)),
                 "UF_DEST": buscar_tag('UF', dest),
                 "INDIEDEST": buscar_tag('indIEDest', dest),
-                "CFOP": buscar_tag('CFOP', prod), 
-                "NCM": buscar_tag('NCM', prod),
+                "CFOP": buscar_tag('CFOP', prod), "NCM": buscar_tag('NCM', prod),
                 "VPROD": safe_float(buscar_tag('vProd', prod)),
-                "ORIGEM": orig, 
-                "CST-ICMS": orig + cst_p if cst_p else orig,
-                "BC-ICMS": safe_float(buscar_tag('vBC', icms)), 
-                "ALQ-ICMS": safe_float(buscar_tag('pICMS', icms)), 
-                "VLR-ICMS": safe_float(buscar_tag('vICMS', icms)),
-                "VAL-ICMS-ST": safe_float(buscar_tag('vICMSST', icms)), 
-                "IE_SUBST": buscar_tag('IEST', icms),
+                "ORIGEM": orig, "CST-ICMS": orig + cst_p if cst_p else orig,
+                "BC-ICMS": safe_float(buscar_tag('vBC', icms)), "ALQ-ICMS": safe_float(buscar_tag('pICMS', icms)), "VLR-ICMS": safe_float(buscar_tag('vICMS', icms)),
+                "VAL-ICMS-ST": safe_float(buscar_tag('vICMSST', icms)), "IE_SUBST": buscar_tag('IEST', icms),
                 "VAL-DIFAL": safe_float(buscar_tag('vICMSUFDest', imp)) + safe_float(buscar_tag('vFCPUFDest', imp)),
-                "CST-IPI": buscar_tag('CST', ipi), 
-                "ALQ-IPI": safe_float(buscar_tag('pIPI', ipi)), 
-                "VLR-IPI": safe_float(buscar_tag('vIPI', ipi)),
-                "CST-PIS": buscar_tag('CST', pis), 
-                "VLR-PIS": safe_float(buscar_tag('vPIS', pis)),
-                "CST-COFINS": buscar_tag('CST', cof), 
-                "VLR-COFINS": safe_float(buscar_tag('vCOFINS', cof)),
-                # --- NOVAS TAGS REFORMA TRIBUTÁRIA AO FINAL ---
+                "CST-IPI": buscar_tag('CST', ipi), "ALQ-IPI": safe_float(buscar_tag('pIPI', ipi)), "VLR-IPI": safe_float(buscar_tag('vIPI', ipi)),
+                "CST-PIS": buscar_tag('CST', pis), "VLR-PIS": safe_float(buscar_tag('vPIS', pis)),
+                "CST-COFINS": buscar_tag('CST', cof), "VLR-COFINS": safe_float(buscar_tag('vCOFINS', cof)),
                 "CLCLASS": buscar_tag('CLClass', prod) or buscar_tag('CLClass', imp),
-                "CST-IBS": buscar_tag('CST', ibs), 
-                "BC-IBS": safe_float(buscar_tag('vBC', ibs)), 
-                "VLR-IBS": safe_float(buscar_tag('vIBS', ibs)),
-                "CST-CBS": buscar_tag('CST', cbs), 
-                "BC-CBS": safe_float(buscar_tag('vBC', cbs)), 
-                "VLR-CBS": safe_float(buscar_tag('vCBS', cbs))
+                "CST-IBS": buscar_tag('CST', ibs), "BC-IBS": safe_float(buscar_tag('vBC', ibs)), "VLR-IBS": safe_float(buscar_tag('vIBS', ibs)),
+                "CST-CBS": buscar_tag('CST', cbs), "BC-CBS": safe_float(buscar_tag('vBC', cbs)), "VLR-CBS": safe_float(buscar_tag('vCBS', cbs))
             })
     except: pass
 
 # --- 3. INTERFACE ---
-st.markdown('<h1 style="text-align: center; color: #FF69B4 !important;">📊 MATRIZ FISCAL</h1>', unsafe_allow_html=True)
+st.markdown("<h1>💎 MATRIZ FISCAL</h1>", unsafe_allow_html=True)
 
-st.markdown("""
-<div class="card-rihanna">
-    <h3 style="color: #FF69B4 !important; margin-top:0;">DIRETRIZES</h3>
-    <p>1. Informe o CNPJ do cliente na barra lateral.</p>
-    <p>2. Suba os arquivos XML ou ZIP abaixo.</p>
-    <p>3. Processe a matriz para gerar o Excel consolidado com <b>todas as colunas fiscais</b>.</p>
-</div>
-""", unsafe_allow_html=True)
-
-if "uploader_key" not in st.session_state:
-    st.session_state["uploader_key"] = 0
+# MANUAL E ENTREGÁVEIS (COLUNAS FOFAS)
+col1, col2 = st.columns(2)
+with col1:
+    st.markdown("""
+    <div class="instrucoes-card">
+        <h3>📖 Manual de Uso</h3>
+        <p>1. <b>Configuração:</b> Digite o CNPJ da empresa na barra lateral.</p>
+        <p>2. <b>Upload:</b> Arraste seus arquivos XML ou ZIP para a área tracejada.</p>
+        <p>3. <b>Extração:</b> Clique em "Processar Matriz" para brilhar nos dados.</p>
+    </div>
+    """, unsafe_allow_html=True)
+with col2:
+    st.markdown("""
+    <div class="instrucoes-card">
+        <h3>🎯 Dados Obtidos</h3>
+        <p>✓ <b>Mapeamento Total:</b> 34 colunas fiscais extraídas.</p>
+        <p>✓ <b>Reforma 2026:</b> Tags de IBS, CBS e CLClass incluídas.</p>
+        <p>✓ <b>Inteligência:</b> Separação automática entre Entradas e Saídas.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown("### ⚙️ PARÂMETROS")
-    cnpj = st.text_input("CNPJ Contribuinte:", placeholder="00.000.000/0001-00")
+    st.markdown("### ⚙️ Ajustes")
+    cnpj_input = st.text_input("CNPJ do Cliente:", placeholder="00.000.000/0001-00")
     st.markdown("---")
-    if st.button("🔄 NOVA ANÁLISE"):
-        st.session_state["uploader_key"] += 1
-        reiniciar_sistema()
+    if st.button("🔄 REINICIAR TUDO"):
+        st.session_state.clear()
+        st.rerun()
 
-files = st.file_uploader("Upload de Repositórios XML", type=["xml", "zip"], accept_multiple_files=True, key=f"uploader_{st.session_state['uploader_key']}")
+files = st.file_uploader("Solte seus arquivos aqui!", type=["xml", "zip"], accept_multiple_files=True)
 
-if st.button("🚀 PROCESSAR MATRIZ"):
-    if not files or not cnpj:
-        st.error("Preencha o CNPJ e anexe os arquivos.")
+if st.button("🚀 PROCESSAR MATRIZ FISCAL"):
+    if not files or not cnpj_input:
+        st.error("Ops! Esqueceu o CNPJ ou os arquivos.")
     else:
-        lista = []
-        with st.spinner("Extraindo todas as tags fiscais..."):
+        lista_final = []
+        with st.spinner("💎 Rihanna Style: Lapidando seus dados..."):
             for f in files:
                 if f.name.endswith('.zip'):
                     with zipfile.ZipFile(f) as z:
                         for n in z.namelist():
-                            if n.lower().endswith('.xml'): ler_xml(z.read(n), lista, cnpj)
-                else:
-                    ler_xml(f.read(), lista, cnpj)
+                            if n.lower().endswith('.xml'): ler_xml(z.read(n), lista_final, cnpj_input)
+                else: ler_xml(f.read(), lista_final, cnpj_input)
         
-        if lista:
-            df = pd.DataFrame(lista)
+        if lista_final:
+            df = pd.DataFrame(lista_final)
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 df.to_excel(writer, index=False)
-            st.success(f"Matriz consolidada com {len(df)} itens e todas as colunas mapeadas.")
-            st.download_button("📥 BAIXAR MATRIZ FISCAL COMPLETA", output.getvalue(), f"matriz_completa_{cnpj}.xlsx")
+            st.success(f"✨ Sucesso! {len(df)} itens organizados com perfeição.")
+            st.download_button("📥 BAIXAR MATRIZ DIAMANTE", output.getvalue(), f"matriz_{cnpj_input}.xlsx")
         else:
-            st.error("Nenhum dado encontrado nos XMLs.")
+            st.error("Nenhum dado válido encontrado. Verifique se os arquivos são NF-es.")
