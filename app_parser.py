@@ -5,8 +5,8 @@ import xml.etree.ElementTree as ET
 import re
 import streamlit as st
 
-# --- 1. CONFIGURAÇÃO DE ESTILO (EXTRAÍDO DO GARIMPEIRO/DIAMOND TAX) ---
-def aplicar_estilo_premium():
+# --- 1. CONFIGURAÇÃO DE ESTILO MATRIZ FISCAL (CLONE DO CONVERSOR RELATÓRIO) ---
+def aplicar_estilo_matriz():
     st.set_page_config(page_title="MATRIZ FISCAL | Diamond", layout="wide", page_icon="💎")
 
     st.markdown("""
@@ -25,89 +25,80 @@ def aplicar_estilo_premium():
             min-width: 350px !important;
         }
 
-        /* --- BOTÃO PRINCIPAL (NEON GLOW) --- */
+        /* --- BOTÃO PRINCIPAL COM NEON GLOW --- */
         div.stButton > button {
-            color: #FF69B4 !important; 
+            color: #6C757D !important; 
             background-color: #FFFFFF !important; 
-            border: 2px solid #FF69B4 !important;
-            border-radius: 20px !important;
+            border: 1px solid #DEE2E6 !important;
+            border-radius: 15px !important;
             font-family: 'Montserrat', sans-serif !important;
             font-weight: 800 !important;
             height: 60px !important;
             text-transform: uppercase;
-            transition: all 0.4s ease-in-out !important;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
             width: 100% !important;
-            box-shadow: 0 0 10px rgba(255, 105, 180, 0.2) !important;
-        }
-        div.stButton > button:hover {
-            background-color: #FF69B4 !important;
-            color: #FFFFFF !important;
-            box-shadow: 0 0 25px rgba(255, 105, 180, 0.7) !important;
         }
 
-        /* --- O FILE UPLOADER DO GARIMPEIRO (ATUALIZADO) --- */
+        div.stButton > button:hover {
+            transform: translateY(-5px) !important;
+            box-shadow: 0 10px 20px rgba(255,105,180,0.2) !important;
+            border-color: #FF69B4 !important;
+            color: #FF69B4 !important;
+        }
+
+        /* --- FILE UPLOADER (ESTILO CONVERSOR RELATORIO) --- */
         [data-testid="stFileUploader"] { 
             border: 2px dashed #FF69B4 !important; 
             border-radius: 20px !important;
             background: #FFFFFF !important;
-            padding: 20px !important;
+            padding: 30px !important;
         }
 
-        /* BOTÃO 'BROWSE FILES' (ROSA COM CONTORNO BRANCO) */
-        section[data-testid="stFileUploader"] button {
+        /* BOTÃO 'BROWSE FILES' (ROSA COM CONTORNO BRANCO GROSSO) */
+        [data-testid="stFileUploader"] section button {
             background-color: #FF69B4 !important;
             color: white !important;
-            border: 2px solid #FFFFFF !important;
-            border-radius: 12px !important;
-            padding: 10px 20px !important;
-            font-family: 'Montserrat', sans-serif !important;
+            border: 3px solid #FFFFFF !important;
             font-weight: 700 !important;
-            box-shadow: 0 4px 10px rgba(255, 105, 180, 0.3) !important;
-            transition: 0.3s !important;
-        }
-        section[data-testid="stFileUploader"] button:hover {
-            transform: scale(1.05) !important;
-            box-shadow: 0 0 15px rgba(255, 105, 180, 0.5) !important;
+            border-radius: 15px !important;
+            box-shadow: 0 0 15px rgba(255, 105, 180, 0.4) !important;
+            padding: 10px 20px !important;
         }
 
-        /* CARDS DE INSTRUÇÃO */
+        /* --- CARDS DE INSTRUÇÃO --- */
         .instrucoes-card {
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 25px;
-            padding: 30px;
-            border-left: 10px solid #FF69B4;
-            margin-bottom: 25px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
-            min-height: 220px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 5px solid #FF69B4;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
 
         h1, h2, h3 {
             font-family: 'Montserrat', sans-serif;
             font-weight: 800;
             color: #FF69B4 !important;
-        }
-
-        .stTextInput>div>div>input {
-            border: 2px solid #FFDEEF !important;
-            border-radius: 12px !important;
+            text-align: center;
         }
 
         /* BOTÃO DOWNLOAD */
         div.stDownloadButton > button {
             background-color: #FF69B4 !important; 
             color: white !important; 
-            font-weight: 800 !important;
+            border: 3px solid #FFFFFF !important;
+            font-weight: 700 !important;
             border-radius: 15px !important;
+            box-shadow: 0 0 15px rgba(255, 105, 180, 0.4) !important;
             height: 60px !important;
             width: 100% !important;
-            border: none !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
-aplicar_estilo_premium()
+aplicar_estilo_matriz()
 
-# --- 2. MOTOR DE LEITURA (LÓGICA DAS 34 COLUNAS PRESERVADA) ---
+# --- 2. MOTOR DE LEITURA (34 COLUNAS - LÓGICA MANTIDA) ---
 def safe_float(v):
     if v is None or pd.isna(v): return 0.0
     txt = str(v).strip().upper()
@@ -164,18 +155,17 @@ def ler_xml(content, dados_lista, cnpj_cliente):
     except: pass
 
 # --- 3. INTERFACE ---
-st.markdown("<h1 style='text-align: center; font-size: 3rem;'>💎 MATRIZ FISCAL</h1>", unsafe_allow_html=True)
+st.markdown("<h1>💎 MATRIZ FISCAL</h1>", unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
 with col1:
     st.markdown('<div class="instrucoes-card"><h3>📖 Manual de Uso</h3><p>1. Digite o CNPJ na lateral.<br>2. Use o botão rosa para anexar arquivos.<br>3. Clique em Processar.</p></div>', unsafe_allow_html=True)
 with col2:
-    st.markdown('<div class="instrucoes-card"><h3>🎯 Entregáveis</h3><p>✓ 34 colunas fiscais.<br>✓ Reforma Tributária 2026.<br>✓ Planilha estruturada.</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="instrucoes-card"><h3>🎯 Resultados</h3><p>✓ 34 colunas fiscais.<br>✓ Reforma Tributária 2026.<br>✓ Planilha completa.</p></div>', unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown("### ⚙️ Ajustes")
     cnpj_input = st.text_input("CNPJ do Cliente:", placeholder="00.000.000/0001-00")
-    if st.button("🔄 REINICIAR SISTEMA"):
+    if st.button("🔄 REINICIAR TUDO"):
         st.session_state.clear()
         st.rerun()
 
@@ -186,7 +176,7 @@ if st.button("🚀 PROCESSAR MATRIZ FISCAL"):
         st.error("Esqueceu o CNPJ ou os arquivos!")
     else:
         lista_final = []
-        with st.spinner("💎 Rihanna Style: Brilhando nos dados..."):
+        with st.spinner("Minerando dados fiscais..."):
             for f in files:
                 if f.name.endswith('.zip'):
                     with zipfile.ZipFile(f) as z:
@@ -199,5 +189,5 @@ if st.button("🚀 PROCESSAR MATRIZ FISCAL"):
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 df.to_excel(writer, index=False)
-            st.success(f"✨ Pronto! {len(df)} registros processados.")
+            st.success(f"✨ Pronto! {len(df)} itens organizados.")
             st.download_button("📥 BAIXAR MATRIZ DIAMANTE", output.getvalue(), f"matriz_{cnpj_input}.xlsx")
