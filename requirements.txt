@@ -2,4 +2,3 @@ pandas
 xlsxwriter
 streamlit
 altair==4.2.2
-typing-extensions==4.5.0
