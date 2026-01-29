@@ -5,9 +5,9 @@ import xml.etree.ElementTree as ET
 import re
 import streamlit as st
 
-# --- 1. ESTILO RIHANNA (BOTÃO UPLOADER ROSA + CONTORNO BRANCO) ---
-def aplicar_estilo_rihanna():
-    st.set_page_config(page_title="MATRIZ FISCAL", layout="wide", page_icon="💎")
+# --- 1. CONFIGURAÇÃO DE ESTILO MATRIZ FISCAL (RIHANNA PREMIUM) ---
+def aplicar_estilo_matriz():
+    st.set_page_config(page_title="MATRIZ FISCAL | Diamond", layout="wide", page_icon="💎")
 
     st.markdown("""
         <style>
@@ -22,9 +22,10 @@ def aplicar_estilo_rihanna():
         [data-testid="stSidebar"] {
             background-color: #FFFFFF !important;
             border-right: 1px solid #FFDEEF !important;
+            min-width: 350px !important;
         }
 
-        /* --- BOTÃO PRINCIPAL (NEON) --- */
+        /* --- BOTÃO PRINCIPAL COM NEON GLOW --- */
         div.stButton > button {
             color: #FF69B4 !important; 
             background-color: #FFFFFF !important; 
@@ -32,52 +33,56 @@ def aplicar_estilo_rihanna():
             border-radius: 20px !important;
             font-family: 'Montserrat', sans-serif !important;
             font-weight: 800 !important;
-            height: 50px !important;
+            height: 60px !important;
             text-transform: uppercase;
             transition: all 0.4s ease-in-out !important;
             width: 100% !important;
             box-shadow: 0 0 10px rgba(255, 105, 180, 0.2) !important;
         }
+
         div.stButton > button:hover {
             background-color: #FF69B4 !important;
             color: #FFFFFF !important;
-            box-shadow: 0 0 20px rgba(255, 105, 180, 0.6) !important;
+            box-shadow: 0 0 25px rgba(255, 105, 180, 0.7), 0 0 45px rgba(255, 105, 180, 0.4) !important;
+            transform: scale(1.02) !important;
+            border-color: #FFFFFF !important;
         }
 
-        /* --- BOTÃO DA ÁREA DE UPLOAD (ROSA COM CONTORNO BRANCO) --- */
+        /* --- ÁREA DE UPLOAD: BOTÃO ROSA COM CONTORNO BRANCO --- */
+        [data-testid="stFileUploader"] { 
+            border: 2px dashed #FF69B4 !important; 
+            border-radius: 20px !important;
+            background: #FFFFFF !important;
+            padding: 25px !important;
+            box-shadow: 0 10px 30px rgba(255, 105, 180, 0.05) !important;
+        }
+
         section[data-testid="stFileUploader"] button {
             background-color: #FF69B4 !important;
             color: white !important;
             border: 2px solid #FFFFFF !important;
             border-radius: 12px !important;
-            padding: 10px 20px !important;
+            padding: 12px 25px !important;
             font-family: 'Montserrat', sans-serif !important;
             font-weight: 700 !important;
-            box-shadow: 0 4px 10px rgba(255, 105, 180, 0.3) !important;
+            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4) !important;
             transition: 0.3s !important;
         }
+
         section[data-testid="stFileUploader"] button:hover {
-            transform: scale(1.05) !important;
-            box-shadow: 0 0 15px rgba(255, 105, 180, 0.5) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 20px rgba(255, 105, 180, 0.6) !important;
         }
 
-        /* ÁREA DE UPLOAD (A CAIXA) */
-        [data-testid="stFileUploader"] { 
-            border: 2px dashed #FF69B4 !important; 
-            border-radius: 20px !important;
-            background: #FFFFFF !important;
-            padding: 20px !important;
-        }
-
-        /* BOTÃO DOWNLOAD */
-        div.stDownloadButton > button {
-            background-color: #FF69B4 !important; 
-            color: white !important; 
-            font-weight: 800 !important;
-            border-radius: 15px !important;
-            height: 60px !important;
-            width: 100% !important;
-            border: none !important;
+        /* --- CARDS DE INSTRUÇÃO --- */
+        .instrucoes-card {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 25px;
+            padding: 30px;
+            border-left: 10px solid #FF69B4;
+            margin-bottom: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            min-height: 220px;
         }
 
         h1, h2, h3 {
@@ -86,17 +91,26 @@ def aplicar_estilo_rihanna():
             color: #FF69B4 !important;
         }
 
-        .instrucoes-card {
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 20px;
-            padding: 25px;
-            border-left: 8px solid #FF69B4;
-            margin-bottom: 25px;
+        .stTextInput>div>div>input {
+            border: 2px solid #FFDEEF !important;
+            border-radius: 12px !important;
+        }
+
+        /* --- BOTÃO DOWNLOAD --- */
+        div.stDownloadButton > button {
+            background-color: #FF69B4 !important; 
+            color: white !important; 
+            font-weight: 800 !important;
+            border-radius: 15px !important;
+            height: 60px !important;
+            width: 100% !important;
+            border: none !important;
+            box-shadow: 0 10px 20px rgba(255, 105, 180, 0.3) !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
-aplicar_estilo_rihanna()
+aplicar_estilo_matriz()
 
 # --- 2. MOTOR DE LEITURA (34 COLUNAS) ---
 def safe_float(v):
@@ -155,18 +169,33 @@ def ler_xml(content, dados_lista, cnpj_cliente):
     except: pass
 
 # --- 3. INTERFACE ---
-st.markdown("<h1>💎 MATRIZ FISCAL</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; font-size: 3rem;'>💎 MATRIZ FISCAL</h1>", unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
 with col1:
-    st.markdown('<div class="instrucoes-card"><h3>📖 Manual de Uso</h3><p>1. Digite o CNPJ na lateral.<br>2. Suba os arquivos no campo rosa.<br>3. Clique em Processar.</p></div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="instrucoes-card">
+        <h3>📖 Manual de Operação</h3>
+        <p>1. <b>Parâmetros:</b> Digite o CNPJ na barra lateral.</p>
+        <p>2. <b>Upload:</b> Arraste arquivos XML ou ZIP para o campo rosa.</p>
+        <p>3. <b>Consolidação:</b> Clique em 'Processar Matriz Fiscal'.</p>
+    </div>
+    """, unsafe_allow_html=True)
 with col2:
-    st.markdown('<div class="instrucoes-card"><h3>🎯 Entregáveis</h3><p>✓ 34 colunas fiscais.<br>✓ Reforma Tributária 2026.<br>✓ Layout diamante.</p></div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="instrucoes-card">
+        <h3>🎯 Resultados Esperados</h3>
+        <p>✓ <b>Mapeamento:</b> Extração de 34 colunas fiscais.</p>
+        <p>✓ <b>Reforma:</b> Tags de IBS, CBS e CLClass integradas.</p>
+        <p>✓ <b>Excel:</b> Arquivo diamante pronto para auditoria.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown("### ⚙️ Ajustes")
+    st.markdown("### ⚙️ Configurações")
     cnpj_input = st.text_input("CNPJ do Cliente:", placeholder="00.000.000/0001-00")
-    if st.button("🔄 REINICIAR TUDO"):
+    st.markdown("---")
+    if st.button("🔄 REINICIAR SISTEMA"):
         st.session_state.clear()
         st.rerun()
 
@@ -174,10 +203,10 @@ files = st.file_uploader("Solte seus arquivos aqui!", type=["xml", "zip"], accep
 
 if st.button("🚀 PROCESSAR MATRIZ FISCAL"):
     if not files or not cnpj_input:
-        st.error("Esqueceu o CNPJ ou os arquivos!")
+        st.error("⚠️ Parâmetros insuficientes! Informe o CNPJ e os arquivos.")
     else:
         lista_final = []
-        with st.spinner("Lapidando os dados..."):
+        with st.spinner("💎 Rihanna Style: Brilhando nos dados..."):
             for f in files:
                 if f.name.endswith('.zip'):
                     with zipfile.ZipFile(f) as z:
@@ -190,5 +219,5 @@ if st.button("🚀 PROCESSAR MATRIZ FISCAL"):
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 df.to_excel(writer, index=False)
-            st.success(f"✨ Pronto! {len(df)} itens organizados.")
+            st.success(f"✨ Matriz concluída! {len(df)} registros processados.")
             st.download_button("📥 BAIXAR MATRIZ DIAMANTE", output.getvalue(), f"matriz_{cnpj_input}.xlsx")
