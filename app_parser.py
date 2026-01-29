@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 import re
 import streamlit as st
 
-# --- 1. CONFIGURAÇÃO DE ESTILO MATRIZ FISCAL (FOCO NO FILE UPLOADER) ---
+# --- 1. CONFIGURAÇÃO DE ESTILO MATRIZ FISCAL (FOCO NO BOTÃO DE ANEXO) ---
 def aplicar_estilo_matriz():
     st.set_page_config(page_title="MATRIZ FISCAL | Diamond", layout="wide", page_icon="💎")
 
@@ -48,7 +48,7 @@ def aplicar_estilo_matriz():
             border-color: #FFFFFF !important;
         }
 
-        /* --- AJUSTE SOLICITADO NO FILE UPLOADER --- */
+        /* --- ÁREA DE UPLOAD TRACEJADA --- */
         [data-testid="stFileUploader"] { 
             border: 2px dashed #FF69B4 !important; 
             border-radius: 20px !important;
@@ -56,7 +56,7 @@ def aplicar_estilo_matriz():
             padding: 20px !important;
         }
 
-        /* O BOTÃO 'BROWSE FILES' (ANEXAR): ROSA COM CONTORNO BRANCO */
+        /* --- O AJUSTE SOLICITADO: BOTÃO ROSA COM CONTORNO BRANCO --- */
         section[data-testid="stFileUploader"] button {
             background-color: #FF69B4 !important;
             color: white !important;
