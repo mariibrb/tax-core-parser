@@ -5,9 +5,9 @@ import xml.etree.ElementTree as ET
 import re
 import streamlit as st
 
-# --- FUNÇÕES DE APOIO ---
+# --- UTILITÁRIOS DE TRATAMENTO ---
 def safe_float(v):
-    """Converte valores do XML para float de forma segura."""
+    """Garante conversão numérica sem quebrar o processamento."""
     if v is None or pd.isna(v): return 0.0
     txt = str(v).strip().upper()
     if txt in ['NT', '', 'N/A', 'ISENTO', 'NULL', 'ZERO', '-', ' ']: return 0.0
@@ -18,17 +18,18 @@ def safe_float(v):
         return round(float(txt), 4)
     except: return 0.0
 
-def buscar_tag_recursiva(tag_alvo, no):
-    """Busca tags ignorando namespaces."""
+def buscar_tag_fiscal(tag_alvo, no):
+    """Busca tag de forma recursiva ignorando namespaces do XML."""
     if no is None: return ""
     for elemento in no.iter():
         tag_nome = elemento.tag.split('}')[-1]
         if tag_nome == tag_alvo: return elemento.text if elemento.text else ""
     return ""
 
-# --- MOTOR DE EXTRAÇÃO XML ---
-def processar_conteudo_xml(content, dados_lista, cnpj_empresa_auditada):
+# --- MOTOR DE LEITURA (CORE PARSER) ---
+def processar_xml_fiscal(content, dados_lista, cnpj_auditado):
     try:
+        # Limpeza de namespaces para evitar falha na busca de tags
         xml_str = content.decode('utf-8', errors='replace')
         xml_str_limpa = re.sub(r'\sxmlns(:\w+)?="[^"]+"', '', xml_str) 
         root = ET.fromstring(xml_str_limpa)
@@ -37,98 +38,102 @@ def processar_conteudo_xml(content, dados_lista, cnpj_empresa_auditada):
         if inf is None: return 
         
         ide = root.find('.//ide'); emit = root.find('.//emit'); dest = root.find('.//dest')
-        cnpj_emit = re.sub(r'\D', '', buscar_tag_recursiva('CNPJ', emit))
-        cnpj_alvo = re.sub(r'\D', '', str(cnpj_empresa_auditada))
-        tipo_nf = buscar_tag_recursiva('tpNF', ide)
-        tipo_operacao = "SAIDA" if (cnpj_emit == cnpj_alvo and tipo_nf == '1') else "ENTRADA"
+        cnpj_emit = re.sub(r'\D', '', buscar_tag_fiscal('CNPJ', emit))
+        cnpj_alvo = re.sub(r'\D', '', str(cnpj_auditado))
+        tipo_nf = buscar_tag_fiscal('tpNF', ide)
+        
+        # Define se é ENTRADA ou SAÍDA comparando com o CNPJ informado
+        operacao = "SAIDA" if (cnpj_emit == cnpj_alvo and tipo_nf == '1') else "ENTRADA"
         chave = inf.attrib.get('Id', '')[3:]
 
         for det in root.findall('.//det'):
             prod = det.find('prod'); imp = det.find('imposto')
-            icms_no = det.find('.//ICMS'); ipi_no = det.find('.//IPI')
-            pis_no = det.find('.//PIS'); cof_no = det.find('.//COFINS')
-            ibs_no = det.find('.//IBS'); cbs_no = det.find('.//CBS')
+            icms = det.find('.//ICMS'); ipi = det.find('.//IPI')
+            pis = det.find('.//PIS'); cof = det.find('.//COFINS')
+            ibs = det.find('.//IBS'); cbs = det.find('.//CBS') # Reforma Tributária
             
-            orig = buscar_tag_recursiva('orig', icms_no)
-            cst_p = buscar_tag_recursiva('CST', icms_no) or buscar_tag_recursiva('CSOSN', icms_no)
-            cst_icms_full = orig + cst_p if cst_p else orig
+            orig = buscar_tag_fiscal('orig', icms)
+            cst_p = buscar_tag_fiscal('CST', icms) or buscar_tag_fiscal('CSOSN', icms)
 
-            # DICIONÁRIO NA ORDEM EXATA SOLICITADA
-            linha = {
+            # Estrutura final da planilha (Gabarito para os futuros módulos)
+            dados_lista.append({
                 "CHAVE_ACESSO": str(chave).strip(),
-                "NUM_NF": buscar_tag_recursiva('nNF', ide),
-                "DATA_EMISSAO": buscar_tag_recursiva('dhEmi', ide) or buscar_tag_recursiva('dEmi', ide),
-                "TIPO_SISTEMA": tipo_operacao,
+                "NUM_NF": buscar_tag_fiscal('nNF', ide),
+                "DATA_EMISSAO": buscar_tag_fiscal('dhEmi', ide) or buscar_tag_fiscal('dEmi', ide),
+                "TIPO_SISTEMA": operacao,
                 "CNPJ_EMIT": cnpj_emit,
-                "UF_EMIT": buscar_tag_recursiva('UF', emit),
-                "CNPJ_DEST": re.sub(r'\D', '', buscar_tag_recursiva('CNPJ', dest)),
-                "UF_DEST": buscar_tag_recursiva('UF', dest),
-                "INDIEDEST": buscar_tag_recursiva('indIEDest', dest),
-                "CFOP": buscar_tag_recursiva('CFOP', prod),
-                "NCM": buscar_tag_recursiva('NCM', prod),
-                "VPROD": safe_float(buscar_tag_recursiva('vProd', prod)),
+                "UF_EMIT": buscar_tag_fiscal('UF', emit),
+                "CNPJ_DEST": re.sub(r'\D', '', buscar_tag_fiscal('CNPJ', dest)),
+                "UF_DEST": buscar_tag_fiscal('UF', dest),
+                "INDIEDEST": buscar_tag_fiscal('indIEDest', dest),
+                "CFOP": buscar_tag_fiscal('CFOP', prod),
+                "NCM": buscar_tag_fiscal('NCM', prod),
+                "VPROD": safe_float(buscar_tag_fiscal('vProd', prod)),
                 "ORIGEM": orig,
-                "CST-ICMS": cst_icms_full,
-                "BC-ICMS": safe_float(buscar_tag_recursiva('vBC', icms_no)),
-                "ALQ-ICMS": safe_float(buscar_tag_recursiva('pICMS', icms_no)),
-                "VLR-ICMS": safe_float(buscar_tag_recursiva('vICMS', icms_no)),
-                "VAL-ICMS-ST": safe_float(buscar_tag_recursiva('vICMSST', icms_no)),
-                "IE_SUBST": str(buscar_tag_recursiva('IEST', icms_no)).strip(),
-                "VAL-DIFAL": safe_float(buscar_tag_recursiva('vICMSUFDest', imp)) + safe_float(buscar_tag_recursiva('vFCPUFDest', imp)),
-                "CST-IPI": buscar_tag_recursiva('CST', ipi_no),
-                "ALQ-IPI": safe_float(buscar_tag_recursiva('pIPI', ipi_no)),
-                "VLR-IPI": safe_float(buscar_tag_recursiva('vIPI', ipi_no)),
-                "CST-PIS": buscar_tag_recursiva('CST', pis_no),
-                "VLR-PIS": safe_float(buscar_tag_recursiva('vPIS', pis_no)),
-                "CST-COFINS": buscar_tag_recursiva('CST', cof_no),
-                "VLR-COFINS": safe_float(buscar_tag_recursiva('vCOFINS', cof_no)),
-                # --- NOVAS TAGS REFORMA TRIBUTÁRIA AO FINAL ---
-                "CLCLASS": buscar_tag_recursiva('CLClass', prod) or buscar_tag_recursiva('CLClass', imp),
-                "CST-IBS": buscar_tag_recursiva('CST', ibs_no),
-                "BC-IBS": safe_float(buscar_tag_recursiva('vBC', ibs_no)),
-                "VLR-IBS": safe_float(buscar_tag_recursiva('vIBS', ibs_no)),
-                "CST-CBS": buscar_tag_recursiva('CST', cbs_no),
-                "BC-CBS": safe_float(buscar_tag_recursiva('vBC', cbs_no)),
-                "VLR-CBS": safe_float(buscar_tag_recursiva('vCBS', cbs_no))
-            }
-            dados_lista.append(linha)
-    except: pass
+                "CST-ICMS": orig + cst_p if cst_p else orig,
+                "BC-ICMS": safe_float(buscar_tag_fiscal('vBC', icms)),
+                "ALQ-ICMS": safe_float(buscar_tag_fiscal('pICMS', icms)),
+                "VLR-ICMS": safe_float(buscar_tag_fiscal('vICMS', icms)),
+                "VAL-ICMS-ST": safe_float(buscar_tag_fiscal('vICMSST', icms)),
+                "IE_SUBST": buscar_tag_fiscal('IEST', icms),
+                "VAL-DIFAL": safe_float(buscar_tag_fiscal('vICMSUFDest', imp)) + safe_float(buscar_tag_fiscal('vFCPUFDest', imp)),
+                "CST-IPI": buscar_tag_fiscal('CST', ipi),
+                "ALQ-IPI": safe_float(buscar_tag_fiscal('pIPI', ipi)),
+                "VLR-IPI": safe_float(buscar_tag_fiscal('vIPI', ipi)),
+                "CST-PIS": buscar_tag_fiscal('CST', pis),
+                "VLR-PIS": safe_float(buscar_tag_fiscal('vPIS', pis)),
+                "CST-COFINS": buscar_tag_fiscal('CST', cof),
+                "VLR-COFINS": safe_float(buscar_tag_fiscal('vCOFINS', cof)),
+                # --- COLUNAS DA REFORMA TRIBUTÁRIA (Sempre ao fim) ---
+                "CLCLASS": buscar_tag_fiscal('CLClass', prod) or buscar_tag_fiscal('CLClass', imp),
+                "CST-IBS": buscar_tag_fiscal('CST', ibs),
+                "BC-IBS": safe_float(buscar_tag_fiscal('vBC', ibs)),
+                "VLR-IBS": safe_float(buscar_tag_fiscal('vIBS', ibs)),
+                "CST-CBS": buscar_tag_fiscal('CST', cbs),
+                "BC-CBS": safe_float(buscar_tag_fiscal('vBC', cbs)),
+                "VLR-CBS": safe_float(buscar_tag_fiscal('vCBS', cbs))
+            })
+    except:
+        pass # Ignora erros em notas específicas para não parar o lote
 
 # --- INTERFACE STREAMLIT ---
-st.set_page_config(page_title="Tax Core Parser", layout="wide")
-st.title("📂 Tax Core Parser - Extração XML")
+st.set_page_config(page_title="Core Fiscal Parser", layout="wide")
+st.title("📂 Core Fiscal Parser")
+st.subheader("Extração de Dados XML: Legado + Reforma Tributária")
 
-cnpj_auditado = st.text_input("Digite o CNPJ da Empresa Auditada (apenas números):")
-uploaded_files = st.file_uploader("Arraste seus XMLs ou ZIPs aqui", type=["xml", "zip"], accept_multiple_files=True)
+cnpj_auditado = st.text_input("CNPJ da Empresa Auditada (apenas números):")
+u_files = st.file_uploader("Upload de XMLs ou Pastas ZIP", type=["xml", "zip"], accept_multiple_files=True)
 
-if st.button("PROCESSAR ARQUIVOS", use_container_width=True, type="primary"):
-    if not cnpj_auditado or not uploaded_files:
-        st.warning("⚠️ Informe o CNPJ e selecione os arquivos.")
+if st.button("PROCESSAR E GERAR PLANILHA", type="primary", use_container_width=True):
+    if not cnpj_auditado or not u_files:
+        st.warning("⚠️ Forneça o CNPJ e os arquivos para continuar.")
     else:
-        dados_finais = []
-        with st.spinner("Lendo XMLs..."):
-            for f in uploaded_files:
+        lista_resultados = []
+        with st.spinner("Lendo ficheiros..."):
+            for f in u_files:
                 if f.name.endswith('.zip'):
                     with zipfile.ZipFile(f) as z:
-                        for n in z.namelist():
-                            if n.lower().endswith('.xml'):
-                                processar_conteudo_xml(z.read(n), dados_finais, cnpj_auditado)
+                        for name in z.namelist():
+                            if name.lower().endswith('.xml'):
+                                processar_xml_fiscal(z.read(name), lista_resultados, cnpj_auditado)
                 else:
-                    processar_conteudo_xml(f.read(), dados_finais, cnpj_auditado)
+                    processar_xml_fiscal(f.read(), lista_resultados, cnpj_auditado)
         
-        if dados_finais:
-            df = pd.DataFrame(dados_finais)
+        if lista_resultados:
+            df = pd.DataFrame(lista_resultados)
+            
+            # Conversão para Excel em memória
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df.to_excel(writer, index=False, sheet_name='DADOS_EXTRAÇÃO')
+                df.to_excel(writer, index=False, sheet_name='DADOS_FISCAIS')
             
-            st.success(f"✅ Sucesso! {len(df)} itens extraídos.")
+            st.success(f"✅ Extração concluída: {len(df)} itens processados.")
             st.download_button(
-                label="📥 BAIXAR EXCEL COMPLETO",
+                label="📥 BAIXAR PLANILHA EXCEL",
                 data=output.getvalue(),
-                file_name=f"extracao_base_{cnpj_auditado}.xlsx",
+                file_name=f"extracao_{cnpj_auditado}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
         else:
-            st.error("❌ Nenhum dado válido encontrado.")
+            st.error("❌ Nenhum dado válido encontrado nos arquivos enviados.")
