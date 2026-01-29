@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 import re
 import streamlit as st
 
-# --- 1. CONFIGURAÇÃO DE ESTILO (SIDEBAR DIAMOND + FILE UPLOADER ROSA) ---
+# --- 1. CONFIGURAÇÃO DE ESTILO (SIDEBAR E LETRAS IDÊNTICAS AO DIAMOND TAX) ---
 def aplicar_estilo_premium():
     st.set_page_config(page_title="MATRIZ FISCAL | Diamond", layout="wide", page_icon="💎")
 
@@ -19,7 +19,7 @@ def aplicar_estilo_premium():
             background: radial-gradient(circle at top right, #FFDEEF 0%, #F8F9FA 100%) !important; 
         }
 
-        /* --- SIDEBAR IGUAL AO CÓDIGO DE EXEMPLO --- */
+        /* --- SIDEBAR CLONE ABSOLUTO --- */
         [data-testid="stSidebar"] {
             background-color: #FFFFFF !important;
             border-right: 1px solid #FFDEEF !important;
@@ -27,7 +27,15 @@ def aplicar_estilo_premium():
             max-width: 400px !important;
         }
 
-        /* BOTÃO DA SIDEBAR (CINZA COM HOVER ROSA) */
+        /* Ajuste de fontes na Sidebar */
+        [data-testid="stSidebar"] .stText, [data-testid="stSidebar"] label, [data-testid="stSidebar"] p {
+            font-size: 1.1rem !important;
+            font-family: 'Plus+Jakarta+Sans', sans-serif !important;
+            color: #31333F !important;
+            font-weight: 600 !important;
+        }
+
+        /* Botão da Sidebar idêntico ao exemplo */
         [data-testid="stSidebar"] div.stButton > button {
             color: #6C757D !important; 
             background-color: #FFFFFF !important; 
@@ -36,34 +44,17 @@ def aplicar_estilo_premium():
             font-family: 'Montserrat', sans-serif !important;
             font-weight: 800 !important;
             height: 60px !important;
+            width: 100% !important;
             text-transform: uppercase;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-            width: 100% !important;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important;
         }
+
         [data-testid="stSidebar"] div.stButton > button:hover {
             transform: translateY(-5px) !important;
             box-shadow: 0 10px 20px rgba(255,105,180,0.2) !important;
             border-color: #FF69B4 !important;
             color: #FF69B4 !important;
-        }
-
-        /* --- BOTÃO DE PROCESSAR (NEON) --- */
-        .main div.stButton > button {
-            color: #FF69B4 !important; 
-            background-color: #FFFFFF !important; 
-            border: 2px solid #FF69B4 !important;
-            border-radius: 20px !important;
-            font-family: 'Montserrat', sans-serif !important;
-            font-weight: 800 !important;
-            height: 60px !important;
-            text-transform: uppercase;
-            transition: all 0.4s ease-in-out !important;
-            box-shadow: 0 0 10px rgba(255, 105, 180, 0.2) !important;
-            width: 100% !important;
-        }
-        .main div.stButton > button:hover {
-            box-shadow: 0 0 25px rgba(255, 105, 180, 0.6) !important;
-            transform: scale(1.02) !important;
         }
 
         /* --- FILE UPLOADER (BOTÃO ROSA + BORDA TRACEJADA) --- */
@@ -81,17 +72,38 @@ def aplicar_estilo_premium():
             border-radius: 12px !important;
             padding: 10px 20px !important;
             font-weight: 700 !important;
-            box-shadow: 0 4px 10px rgba(255, 105, 180, 0.3) !important;
+            box-shadow: 0 0 15px rgba(255, 105, 180, 0.4) !important;
         }
 
-        /* --- CARDS E TÍTULOS --- */
+        /* --- ESTILO DOS INPUTS --- */
+        .stTextInput>div>div>input {
+            border: 2px solid #FFDEEF !important;
+            border-radius: 10px !important;
+            padding: 12px !important;
+            font-size: 1rem !important;
+        }
+
+        /* --- BOTÃO DE PROCESSAR NO CORPO (NEON) --- */
+        .main div.stButton > button {
+            color: #FF69B4 !important; 
+            background-color: #FFFFFF !important; 
+            border: 2px solid #FF69B4 !important;
+            border-radius: 20px !important;
+            font-family: 'Montserrat', sans-serif !important;
+            font-weight: 800 !important;
+            height: 60px !important;
+            text-transform: uppercase;
+            width: 100% !important;
+            box-shadow: 0 0 10px rgba(255, 105, 180, 0.2) !important;
+        }
+
+        /* CARDS E TÍTULOS */
         .instrucoes-card {
             background-color: rgba(255, 255, 255, 0.7);
             border-radius: 15px;
             padding: 20px;
             border-left: 5px solid #FF69B4;
             margin-bottom: 20px;
-            min-height: 250px;
         }
 
         h1, h2, h3 {
@@ -100,17 +112,12 @@ def aplicar_estilo_premium():
             color: #FF69B4 !important;
             text-align: center;
         }
-
-        .stTextInput>div>div>input {
-            border: 2px solid #FFDEEF !important;
-            border-radius: 10px !important;
-        }
         </style>
     """, unsafe_allow_html=True)
 
 aplicar_estilo_premium()
 
-# --- 2. MOTOR DE LEITURA (34 COLUNAS) ---
+# --- 2. MOTOR DE LEITURA (34 COLUNAS - LÓGICA MANTIDA) ---
 def safe_float(v):
     if v is None or pd.isna(v): return 0.0
     txt = str(v).strip().upper()
@@ -173,11 +180,12 @@ col1, col2 = st.columns(2)
 with col1:
     st.markdown('<div class="instrucoes-card"><h3>📖 Manual de Uso</h3><p>1. Digite o CNPJ na lateral.<br>2. Use o botão rosa para anexar arquivos.<br>3. Clique em Processar.</p></div>', unsafe_allow_html=True)
 with col2:
-    st.markdown('<div class="instrucoes-card"><h3>🎯 Entregáveis</h3><p>✓ 34 colunas fiscais.<br>✓ Reforma Tributária 2026.<br>✓ Excel estruturado.</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="instrucoes-card"><h3>🎯 Resultados</h3><p>✓ 34 colunas fiscais.<br>✓ Reforma Tributária 2026.<br>✓ Planilha estruturada.</p></div>', unsafe_allow_html=True)
 
 with st.sidebar:
     st.markdown("### 🔍 Configuração")
     cnpj_input = st.text_input("CNPJ DO CLIENTE", placeholder="00.000.000/0001-00")
+    st.divider()
     if st.button("🗑️ RESETAR SISTEMA"):
         st.session_state.clear()
         st.rerun()
